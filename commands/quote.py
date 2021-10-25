@@ -58,7 +58,7 @@ async def quote(message: Message, text: Optional[str] = None):
         error_up = True
         link_mes = prefix + 'https://quote.redmaun.site:2087/index/'.upper()
 
-    if (message.attachments != []):
+    if (message.attachments != [] or text != None and text != ''):
         qu = text
         if (qu == None or qu != '' and qu[0] != '!' or qu == ''): 
 
