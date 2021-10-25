@@ -64,13 +64,17 @@ async def quote(message: Message, text: Optional[str] = None):
 
             mes = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.conversation_message_id, peer_id=message.peer_id)
             mes_get = mes.items[0]
-            # a = 'photo' + str(mes_get.attachments[0].photo.owner_id) + '_' + str(mes_get.attachments[0].photo.id)
             images = []
             for i in range(len(mes_get.attachments)):
                 if mes_get.attachments[i].doc:
                     images.append(mes_get.attachments[i].doc.url)
                 else:
-                    images.append(mes_get.attachments[i].photo.sizes[-1].url)
+                    b = mes_get.attachments[i].photo.sizes
+                    c = []
+                    for g in range(len(b)):
+                        c.append(b[g].height*b[g].width)
+                    result = b[c.index(max(c))].url
+                    images.append(result)
             
             if message.from_id == abs(message.from_id):
                 user = await bp.api.users.get(message.from_id)
@@ -133,7 +137,12 @@ async def quote(message: Message, text: Optional[str] = None):
                                     if mes_get.attachments[i].doc:
                                         images.append(mes_get.attachments[i].doc.url)
                                     else:
-                                        images.append(mes_get.attachments[i].photo.sizes[-1].url)
+                                        b = mes_get.attachments[i].photo.sizes
+                                        c = []
+                                        for g in range(len(b)):
+                                            c.append(b[g].height*b[g].width)
+                                        result = b[c.index(max(c))].url
+                                        images.append(result)
 
                                 if (images != []):
                                     ans = await add_quote(None, qu, au, link, link_mes, images)
