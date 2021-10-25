@@ -23,5 +23,7 @@ async def help(message: Message):
         "/time, /TIME - время на сервере(GMT +7)",
         "/neofetch, /NEOFETCH - вывод информации neofetch с сервера",
         "/mem, /MEM, /memory, /MEMORY - количество свободной оперативной памяти на сервере",
+        "",
+        "https://github.com/RedMaun/quote-bot"
     ]
     await message.answer('\n'.join(description))
