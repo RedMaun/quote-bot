@@ -1,59 +1,43 @@
 from vkbottle.bot import Blueprint, Message
-import sys
-sys.path.insert(0, '..')
-from db.connect import collection 
-bp = Blueprint()
+from classes.abstract_command import AbstractCommand
+from db.connect import collection
 from typing import Optional
-from config.admins import admins
-from config.super_admin import super_admin
-from config.default_answer import *
+import json
 
-exex = ['/delete <item>', '/DELETE <item>']
+bp = Blueprint()
 
-@bp.on.message(text=exex)
-async def index(message: Message, item: Optional[str] = None):
-    error_up = '/DELETE' in message.text
+config = 'config.json'
+
+def config_load(config):
+    with open(config, 'r') as f:
+        return json.load(f)
+
+class Command(AbstractCommand):
+    def __init__(self):
+        super().__init__(handler = ['/delete <item>', '/DELETE <item>'], description = 'will delete quote')
+
+Delete = Command()
+
+@bp.on.message(text = Delete.hdl())
+async def list(m: Message, item: Optional[int] = None):
+    data = config_load(config)
+    admins = data["admins"]
+    default = data["default"]
+
     cursor = collection.find({})
-    b = []
+    quotes = []
     for i in cursor:
-        b.append(i)
-    if str(message.from_id) in admins or str(message.from_id) in super_admin:
-        if item != None: 
-            try:
-                item = int(str(item))
-            except:
-                if (error_up):
-                    await message.answer(prefix + error.upper())
-                else:
-                    await message.answer(error)
-
-            if 'int' in str(type(item)):
-                if item <= len(b) - 1:
-                    abc = b[item]
-                    id = abc['_id']
-                    myquery = { "_id": id }
-                    collection.delete_one(myquery)
-                    if (error_up):
-                        await message.answer(prefix + ok.upper())
-                    else:
-                        await message.answer(ok)
-                else:
-                    if (error_up):
-                        await message.answer(prefix + error.upper())
-                    else:
-                        await message.answer(error)
+        quotes.append(i)
+    try:
+        if (m.from_id in admins):
+            item = int(item)
+            if (item != None and isinstance(item, int)):
+                myquery = { "_id": quotes[item]['_id'] }
+                collection.delete_one(myquery)
+                await Delete.ans_up(default['ok'], m)
             else:
-                if (error_up):
-                    await message.answer(prefix + error.upper())
-                else:
-                    await message.answer(error)
+                await Delete.ans_up(default['error'], m)
         else:
-            if (error_up):
-                await message.answer(prefix + error.upper())
-            else:
-                await message.answer(error)
-    else:
-        if (error_up):
-            await message.answer(prefix + not_admin.upper())
-        else:
-            await message.answer(not_admin)
+            await Delete.ans_up(default['not_admin'], m)
+    except Exception as e:
+            await Delete.ans_up(e, m)

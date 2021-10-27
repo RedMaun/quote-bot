@@ -1,6 +1,12 @@
-import pymongo, sys
-sys.path.insert(0, '..')
-from config.db import url
+import pymongo
+import json
+
+config = 'config.json'
+
+with open(config, 'r') as f:
+    data = json.load(f)
+
+url = data["url"]
 
 client = pymongo.MongoClient(url)
 db = client.quote

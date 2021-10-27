@@ -1,29 +1,33 @@
 from vkbottle.bot import Blueprint, Message
-from os import popen
+import sys, os, pkgutil
+from classes.abstract_command import AbstractCommand
+
 bp = Blueprint()
-from config.default_answer import *
 
-exex = ['/help', '/HELP', '/хелп', '/ХЕЛП']
+class Command(AbstractCommand):
+    def __init__(self):
+        super().__init__(handler = ['/help', '/HELP', '/хелп', '/ХЕЛП'], description = 'shows commands usage')
 
-@bp.on.message(text=exex)
-async def help(message: Message):
-    description = [
-        "Команды для админов:",
-        "/admin, /ADMIN - добавить админа",
-        "/del, /DEL - удалить админа",
-        "/delete item, /DELETE item - удалить цитату, где item это индекс цитаты",
-        "/edit index item text, /EDIT index item text - редактировать цитату, где index это индекс цитаты, item это редактируемый элемент(qu - содержимое цитаты; au - автор; link - ссылка на автора), text это будущее значение соответствующего элемента",
-        "",
-        "Команды для всех:",
-        "/сьлржалсч text, /СЬЛРЖАЛСЧ text, /сьлржалсч, /СЬЛРЖАЛСЧ - цитирование сообщения, либо добавление собственной цитаты, где text это текст вашей цитаты; возможно цитирование отдельного сообщения с фото и гифками, но при пересылке нескольких сообщений файлы прикрепляться не будут!",
-        "/сь index, /СЬ index - выводит определенную цитату, где index это индекс цитаты",
-        "/random, /ведать, /RANDOM, /ВЕДАТЬ - рандомная цитата",
-        "/лист, /ЛИСТ - отображение списка админов",
-        "/uptime, /UPTIME - аптайм сервера(на котором хостится бот)",
-        "/time, /TIME - время на сервере(GMT +7)",
-        "/neofetch, /NEOFETCH - вывод информации neofetch с сервера",
-        "/mem, /MEM, /memory, /MEMORY - количество свободной оперативной памяти на сервере",
-        "",
-        "https://github.com/RedMaun/quote-bot"
-    ]
-    await message.answer('\n'.join(description))
+Help = Command()
+
+sys.path.insert(0, 'commands')
+for module in os.listdir(os.path.dirname(__file__)):
+    if module == '__init__.py' or module[-3:] != '.py':
+        continue
+    __import__(module[:-3], locals(), globals())
+del module
+sys.path.insert(0, '..')
+
+import commands
+
+@bp.on.message(text=Help.hdl())
+async def help(m: Message):
+    methods = [name for _, name, _ in pkgutil.iter_modules(['commands'])]
+    help_list = []
+    for i in range(len(methods)):
+        try:
+            help_list.append(', '.join(eval('commands.{}.Command().hdl()'.format(methods[i]))) + ' - ' + str(eval('commands.{}.Command().dsc()'.format(methods[i]))))
+        except:
+            pass
+    await Help.ans_up('\n'.join(help_list), m)
+    

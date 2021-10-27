@@ -1,310 +1,122 @@
 from vkbottle.bot import Blueprint, Message
-import sys
-from datetime import date, datetime
-sys.path.insert(0, '..')
+from classes.abstract_command import AbstractCommand
 from db.connect import collection 
+import json
+
 bp = Blueprint()
-from typing import Optional
-from config.default_answer import *
-import urllib.request
 
-async def add_quote(audio, qu, au, link, link_mes, images):
-    if (audio != None and qu != None or audio == None and qu == None and images == None or au == '' or audio == '' and qu == '' and images == '' or au == ''):
-        return False
-    today = date.today()
-    d = today.strftime("%d.%m.%Y")
-    t = str(datetime.now().time())[:5]
-    time = d + ' в ' + t
-    if (audio != None and link != None):
-        data = {"audio": audio, "au": au, "da": time, "link": link}
+config = 'config.json'
 
-    elif (audio != None):
-         data = {"audio": audio, "au": au, "da": time}
+def config_load(config):
+    with open(config, 'r') as f:
+        return json.load(f)
 
-    elif (qu != None and link != None and images != None):
-        data = {"qu": qu, "au": au, "da": time, "link": link, "images": images}
+class Command(AbstractCommand):
+    def __init__(self):
+        super().__init__(handler = ['/сьлржалсч', '/СЬЛРЖАЛСЧ'], description = 'make quote from message')
 
-    elif (link != None and images != None):
-        data = {"au": au, "da": time, "link": link, "images": images}
+Quote = Command()
 
-    elif (qu != None and link != None):
-        data = {"qu": qu, "au": au, "da": time, "link": link}
+def get_photo(b):
+    c = []
+    for g in range(len(b)):
+        c.append(b[g].height*b[g].width)
+    result = b[c.index(max(c))].url
+    return result
 
-    elif (qu != None):
-        data = {"qu": qu, "au": au, "da": time}
+async def unpack(message):
+    mes = []
+    try:
+        mess = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.conversation_message_id, peer_id=message.peer_id)
+        message = mess.items[0]
+    except:
+        pass
+    async def unpack_one(msg):
+        images = []
+        if (msg.attachments):
+            for i in range(len(msg.attachments)):
+                if (msg.attachments[i].photo):
+                    images.append(get_photo(msg.attachments[i].photo.sizes))
+                elif (msg.attachments[i].doc):
+                    images.append(msg.attachments[i].doc.url)
 
-    else:
-        return False
-
-    abc = collection.insert_one(data)
-
-    s = -1
-    cursor = collection.find()
-    for line in cursor:
-        s += 1
-
-    return link_mes + str(s)
-
-exex = ['/сьлржалсч <text>', '/СЬЛРЖАЛСЧ <text>', '/сьлржалсч', '/СЬЛРЖАЛСЧ']
-
-@bp.on.message(text=exex)
-async def quote(message: Message, text: Optional[str] = None):
-    if ('/сьлржалсч' in message.text):
-        error_mes = error
-        error_up = False
-        link_mes = 'https://quote.redmaun.site:2087/index/'
-    else:
-        error_mes = prefix + error.upper()
-        error_up = True
-        link_mes = prefix + 'https://quote.redmaun.site:2087/index/'.upper()
-
-    if (message.attachments != [] or text != None and text != ''):
-        qu = text
-        if (qu == None or qu != '' and qu[0] != '!' or qu == ''): 
-
-            mes = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.conversation_message_id, peer_id=message.peer_id)
-            mes_get = mes.items[0]
-            images = []
-            for i in range(len(mes_get.attachments)):
-                if mes_get.attachments[i].doc:
-                    images.append(mes_get.attachments[i].doc.url)
-                else:
-                    b = mes_get.attachments[i].photo.sizes
-                    c = []
-                    for g in range(len(b)):
-                        c.append(b[g].height*b[g].width)
-                    result = b[c.index(max(c))].url
-                    images.append(result)
-            
-            if message.from_id == abs(message.from_id):
-                user = await bp.api.users.get(message.from_id)
-                au = user[0].first_name + ' ' + user[0].last_name
-                link = 'https://vk.com/id{}'.format(message.from_id)
-            else:
-                group = await bp.api.groups.get_by_id(message.group_id)
-                au = group[0].name
-                link = 'https://vk.com/public{}'.format(message.group_id)
-
-            ans = await add_quote(None, qu, au, link, link_mes, images)
-            if (ans != False):
-                await message.answer(ans)
-            else:
-                await message.answer(error_mes)
+        if (msg.from_id == abs(msg.from_id)):
+            user = await bp.api.users.get(msg.from_id)
+            name = user[0].first_name + ' ' + user[0].last_name
+            link = 'https://vk.com/id{}'.format(msg.from_id)
         else:
-            await message.answer(error_mes)
+            user = await bp.api.groups.get_by_id(abs(msg.from_id))
+            name = user[0].name
+            link = 'https://vk.com/public{}'.format(abs(msg.from_id))
+
+        return {"id": msg.from_id, "link": link, "name": name, "text": msg.text, "images": images}
         
-    else:
-        if message.reply_message != None:
-                if message.reply_message.attachments != []:
-                    if message.reply_message.attachments[0].audio_message:
-                        try:
-                            audio = message.reply_message.attachments[0].audio_message.link_mp3
-                            if message.reply_message.from_id == abs(message.reply_message.from_id):
-                                user = await bp.api.users.get(message.reply_message.from_id)
-                                au = user[0].first_name + ' ' + user[0].last_name
-                                link = 'https://vk.com/id{}'.format(message.reply_message.from_id)
-                            else:
-                                group = await bp.api.groups.get_by_id(message.group_id)
-                                au = group[0].name
-                                link = 'https://vk.com/public{}'.format(message.group_id)
-                            ans = await add_quote(audio, None, au, link, link_mes, None)
-                            if (ans != False):
-                                await message.answer(ans)
-                            else:
-                                await message.answer(error_mes)
-                        except Exception as e:
-                            if (error_up):
-                                await message.answer(prefix + e.upper())
-                            else:
-                                await message.answer(e)                           
-                    else:
-                        qu = message.reply_message.text
-                        if (qu != '' and qu[0] != '!' or qu == ''): 
-                            try:
-                                if message.reply_message.from_id == abs(message.reply_message.from_id):
-                                    user = await bp.api.users.get(message.reply_message.from_id)
-                                    au = user[0].first_name + ' ' + user[0].last_name
-                                    link = 'https://vk.com/id{}'.format(message.reply_message.from_id)
-                                else:
-                                    group = await bp.api.groups.get_by_id(message.group_id)
-                                    au = group[0].name
-                                    link = 'https://vk.com/public{}'.format(message.group_id)
-                                
-                                images = []
-                                mes = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.reply_message.conversation_message_id, peer_id=message.peer_id)
-                                mes_get = mes.items[0]
-                                for i in range(len(mes_get.attachments)):
-                                    if mes_get.attachments[i].doc:
-                                        images.append(mes_get.attachments[i].doc.url)
-                                    else:
-                                        b = mes_get.attachments[i].photo.sizes
-                                        c = []
-                                        for g in range(len(b)):
-                                            c.append(b[g].height*b[g].width)
-                                        result = b[c.index(max(c))].url
-                                        images.append(result)
-
-                                if (images != []):
-                                    ans = await add_quote(None, qu, au, link, link_mes, images)
-                                else:
-                                    ans = await add_quote(None, qu, au, link, link_mes, None)
-
-                                if (ans != False):
-                                    await message.answer(ans)
-                                else:
-                                    await message.answer(error_mes)
-                            except Exception as e:
-                                if (error_up):
-                                    await message.answer(prefix + e.upper())
-                                else:
-                                    await message.answer(e)  
-                        else:
-                            await message.answer(error_mes)
-                else:
-                    qu = message.reply_message.text
-                    if qu != '' and qu[0] != '!': 
-                        try:
-                            if message.reply_message.from_id == abs(message.reply_message.from_id):
-                                user = await bp.api.users.get(message.reply_message.from_id)
-                                au = user[0].first_name + ' ' + user[0].last_name
-                                link = 'https://vk.com/id{}'.format(message.reply_message.from_id)
-                            else:
-                                group = await bp.api.groups.get_by_id(message.group_id)
-                                au = group[0].name
-                                link = 'https://vk.com/public{}'.format(message.group_id)
-
-                            ans = await add_quote(None, qu, au, link, link_mes, None)
-                            if (ans != False):
-                                await message.answer(ans)
-                            else:
-                                await message.answer(error_mes)
-                        except Exception as e:
-                            if (error_up):
-                                await message.answer(prefix + e.upper())
-                            else:
-                                await message.answer(e)  
-                    else:
-                        await message.answer(error_mes)
-        else:
+    mes.append(await unpack_one(message))
+    if (message.reply_message):
+        mess_reply = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.reply_message.conversation_message_id, peer_id=message.peer_id)
+        mess_reply = mess_reply.items[0]
+        mes.append(await unpack(mess_reply))
+    elif (message.fwd_messages):
+        for i in range(len(message.fwd_messages)):
+            mess = message.fwd_messages[i]
             try:
-                if message.fwd_messages[0].attachments[0].audio_message:
-                    audio = message.fwd_messages[0].attachments[0].audio_message.link_mp3
-                    if message.reply_message.from_id == abs(message.reply_message.from_id):
-                        user = await bp.api.users.get(message.reply_message.from_id)
-                        au = user[0].first_name + ' ' + user[0].last_name
-                        link = 'https://vk.com/id{}'.format(message.reply_message.from_id)
-                    else:
-                        group = await bp.api.groups.get_by_id(message.group_id)
-                        au = group[0].name
-                        link = 'https://vk.com/public{}'.format(message.group_id)
-                    ans = await add_quote(audio, None, au, link, link_mes, None)
-                    if (ans != False):
-                        await message.answer(ans)
-                    else:
-                        await message.answer(error_mes)
-                else:
-                    if len(message.fwd_messages) != 0:
-                        a = 0
-                        for i in range(len(message.fwd_messages)):
-                            if message.fwd_messages[i].text != '' and message.fwd_messages[i].text[0] == '!':
-                                a = 1
-                        if a == 0:
-                            try:
-                                check = []
-                                qu = []
-                                link = ''
-                                for i in range(len(message.fwd_messages)):
-                                    if message.fwd_messages[i].from_id == abs(message.fwd_messages[i].from_id):
-                                        user = await bp.api.users.get(message.fwd_messages[i].from_id)
-                                        check.append(str(user[0].first_name + ' ' + user[0].last_name))
-                                    else:
-                                        group = await bp.api.groups.get_by_id(abs(message.fwd_messages[i].from_id))
-                                        check.append(str(group[0].name))
-                                if (check.count(check[0]) == len(check)):
-                                    if message.fwd_messages[0].from_id == abs(message.fwd_messages[0].from_id):
-                                        user = await bp.api.users.get(message.fwd_messages[0].from_id)
-                                        for i in range(len(message.fwd_messages)):
-                                            qu.append(message.fwd_messages[i].text)
-                                        au = user[0].first_name + ' ' + user[0].last_name
-                                        link = 'https://vk.com/id{}'.format(message.fwd_messages[0].from_id)
-                                    else:
-                                        group = await bp.api.groups.get_by_id(abs(message.fwd_messages[0].from_id))
-                                        for i in range(len(message.fwd_messages)):
-                                            qu.append(message.fwd_messages[i].text)
-                                        au = group[0].name
-                                        link = 'https://vk.com/public{}'.format(abs(message.fwd_messages[0].from_id))
-                                else:
-                                    for i in range(len(message.fwd_messages)):
-                                        if message.fwd_messages[i].from_id == abs(message.fwd_messages[i].from_id):
-                                            user = await bp.api.users.get(message.fwd_messages[i].from_id)
-                                            qu.append(user[0].first_name + ' ' + user[0].last_name + ': ' + message.fwd_messages[i].text)
-                                        else:
-                                            group = await bp.api.groups.get_by_id(abs(message.fwd_messages[i].from_id))
-                                            qu.append(group[0].name + ': ' + message.fwd_messages[i].text)
-                                    au = (await bp.api.messages.get_conversations_by_id(peer_ids=message.peer_id)).items[0].chat_settings.title
-
-                                ans = await add_quote(None, qu, au, link, link_mes, None)
-                                if (ans != False):
-                                    await message.answer(ans)
-                                else:
-                                    await message.answer(error_mes)
-                            except Exception as e:
-                                if (error_up):
-                                    await message.answer(prefix + e.upper())
-                                else:
-                                    await message.answer(e)  
-                        else:
-                            await message.answer(error_mes)
+                mess = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.fwd_messages[i].conversation_message_id, peer_id=message.fwd_messages[i].peer_id)
+                mess = mess.items[0]
             except:
-                if len(message.fwd_messages) != 0:
-                    a = 0
-                    for i in range(len(message.fwd_messages)):
-                        if message.fwd_messages[i].text != '' and message.fwd_messages[i].text[0] == '!':
-                            a = 1
-                    if a == 0:
-                        try:
-                            check = []
-                            qu = []
-                            link = ''
-                            for i in range(len(message.fwd_messages)):
-                                if message.fwd_messages[i].from_id == abs(message.fwd_messages[i].from_id):
-                                    user = await bp.api.users.get(message.fwd_messages[i].from_id)
-                                    check.append(str(user[0].first_name + ' ' + user[0].last_name))
-                                else:
-                                    group = await bp.api.groups.get_by_id(abs(message.fwd_messages[i].from_id))
-                                    check.append(str(group[0].name))
-                            if (check.count(check[0]) == len(check)):
-                                if message.fwd_messages[0].from_id == abs(message.fwd_messages[0].from_id):
-                                    user = await bp.api.users.get(message.fwd_messages[0].from_id)
-                                    for i in range(len(message.fwd_messages)):
-                                        qu.append(message.fwd_messages[i].text)
-                                    au = user[0].first_name + ' ' + user[0].last_name
-                                    link = 'https://vk.com/id{}'.format(message.fwd_messages[0].from_id)
-                                else:
-                                    group = await bp.api.groups.get_by_id(abs(message.fwd_messages[0].from_id))
-                                    for i in range(len(message.fwd_messages)):
-                                        qu.append(message.fwd_messages[i].text)
-                                    au = group[0].name
-                                    link = 'https://vk.com/public{}'.format(abs(message.fwd_messages[0].from_id))
-                            else:
-                                for i in range(len(message.fwd_messages)):
-                                    if message.fwd_messages[i].from_id == abs(message.fwd_messages[i].from_id):
-                                        user = await bp.api.users.get(message.fwd_messages[i].from_id)
-                                        qu.append(user[0].first_name + ' ' + user[0].last_name + ': ' + message.fwd_messages[i].text)
-                                    else:
-                                        group = await bp.api.groups.get_by_id(abs(message.fwd_messages[i].from_id))
-                                        qu.append(group[0].name + ': ' + message.fwd_messages[i].text)
-                                au = (await bp.api.messages.get_conversations_by_id(peer_ids=message.peer_id)).items[0].chat_settings.title
+                pass
+            mes.append(await unpack(mess))
 
-                            ans = await add_quote(None, qu, au, link, link_mes, None)
-                            if (ans != False):
-                                await message.answer(ans)
-                            else:
-                                await message.answer(error_mes)
-                        except Exception as e:
-                            if (error_up):
-                                await message.answer(prefix + e.upper())
-                            else:
-                                await message.answer(e)  
-                    else:
-                        await message.answer(error_mes)
+    return mes
+
+@bp.on.message(text=Quote.hdl())
+async def quote(m: Message):
+    try:
+        if (m.reply_message):
+            mes = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=m.reply_message.conversation_message_id, peer_id=m.peer_id)
+            mes = mes.items[0]
+            unpacked_message = await unpack(mes)
+        elif (m.fwd_messages):
+            unpacked_message = await unpack(m)
+            unpacked_message.pop(0)
+        if (unpacked_message and len(unpacked_message) == 1 and isinstance(unpacked_message[0], list)):
+            unpacked_message = unpacked_message[0]
+
+        if (unpacked_message and len(unpacked_message) == 1):
+            qu = unpacked_message[0].get('text')
+            au = unpacked_message[0].get('name')
+            images = unpacked_message[0].get('images')
+            _id = unpacked_message[0].get('id')
+            
+            if (_id == abs(_id)):
+                link = 'https://vk.com/id{}'.format(_id)
+            else:
+                link = 'https://vk.com/public{}'.format(abs(_id))
+            
+            quote_data = {"qu": qu, "au": au, "images": images, "link": link}
+            collection.insert_one(quote_data)
+            
+            s = -1
+            cursor = collection.find()
+            for line in cursor:
+                s += 1
+
+            await Quote.ans_up('https://quote.redmaun.site:2087/index/' + str(s), m)
+        else:
+            qu = []
+            for i in range(len(unpacked_message)):
+                    qu.append(unpacked_message[i])
+            au = (await bp.api.messages.get_conversations_by_id(peer_ids=m.peer_id)).items[0].chat_settings.title
+            
+            quote_data = {"qu": qu, "au": au}
+            collection.insert_one(quote_data)
+
+            s = -1
+            cursor = collection.find()
+            for line in cursor:
+                s += 1
+
+            await Quote.ans_up('https://quote.redmaun.site:2087/index/' + str(s), m)
+
+    except Exception as e:
+        await Quote.ans_up(e, m)
+            

@@ -1,44 +1,68 @@
 from vkbottle.bot import Blueprint, Message
-import sys
-sys.path.insert(0, '..')
-from config.admins import admins
-from config.super_admin import super_admin
-from config.default_answer import *
+from classes.abstract_command import AbstractCommand
+from typing import Optional
+import json
+
 bp = Blueprint()
 
-exex = ['/admin', '/ADMIN']
+config = 'config.json'
 
-@bp.on.message(text=exex)
-async def mem(message: Message):
-    up = '/ADMIN' == message.text
-    try:
-        if str(message.from_id) in admins or str(message.from_id) in super_admin:
-            _id = message.reply_message.from_id
-            user = await bp.api.users.get(_id)
-            name = user[0].first_name + ' ' + user[0].last_name
+def config_load(config):
+    with open(config, 'r') as f:
+        return json.load(f)
 
-            if (not (str(_id) in admins)):
-                admins.append(str(_id))
-                f = open('config/admins.py', 'w')
-                f.write('admins = ' + str(admins)) 
-                f.close()
-                if (up):
-                    await message.answer(prefix + str(name + ' теперь почетный член ВС ПИДР!').upper())
+class Command(AbstractCommand):
+    def __init__(self):
+        super().__init__(handler = ['/admin <item>', '/ADMIN <item>', '/admin', '/ADMIN'], description = 'add admin')
+
+Admin = Command()
+
+@bp.on.message(text=Admin.hdl())
+async def admin(m: Message, item: Optional[str] = None):
+    data = config_load(config)
+    admins = data["admins"]
+    default = data["default"]
+
+    if (m.from_id in admins): 
+        try:
+            if (item != None):
+                if (item[:3] == '[id'):
+                    item = int(item.replace(item[:3], '')[:9])
+                    user = await bp.api.users.get(item)
+                    name = user[0].first_name + ' ' + user[0].last_name
+                elif (item[:5] == '[club'):
+                    item = -(int(item.replace(item[:5], '')[:9]))
+                    user = await bp.api.groups.get_by_id(abs(item))
+                    name = user[0].name
+                
+                if (not(item in admins)):
+                    admins.append(item)
+                    with open(config, 'w') as file:
+                        json.dump(data, file)
+                    await Admin.ans_up(name + ' теперь почетный член ВС ПИДР!', m)
                 else:
-                    await message.answer(name + ' теперь почетный член ВС ПИДР!')
-            else:
-                if (up):
-                    await message.answer(prefix + (name + ' уже оракул!').upper())
-                else:
-                    await message.answer((name + ' уже оракул!'))
-        else:
-            if (up):
-                await message.answer(prefix + not_admin.upper())
-            else:
-                await message.answer(not_admin)
-    except:
-        if (up):
-            await message.answer(prefix + error.upper())
-        else:
-            await message.answer(error)
+                    await Admin.ans_up(name + ' уже админ', m)
 
+            elif (m.reply_message):
+                if (m.reply_message.from_id == abs(m.reply_message.from_id)):
+                    item = m.reply_message.from_id
+                    user = await bp.api.users.get(item)
+                    name = user[0].first_name + ' ' + user[0].last_name
+
+                else:
+                    item = m.reply_message.from_id
+                    user = await bp.api.groups.get_by_id(abs(item))
+                    name = user[0].name
+
+                if (not(item in admins)):
+                    admins.append(item)
+                    with open(config, 'w') as file:
+                        json.dump(data, file)
+                    await Admin.ans_up(name + ' теперь почетный член ВС ПИДР!', m)
+                else:
+                    await Admin.ans_up(name + ' уже админ', m)
+
+        except Exception as e:
+            await Admin.ans_up(e, m)
+    else:
+        await Admin.ans_up(default["not_admin"], m)
