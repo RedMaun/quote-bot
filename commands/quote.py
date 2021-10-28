@@ -86,21 +86,21 @@ async def quote(m: Message):
             au = unpacked_message[0].get('name')
             images = unpacked_message[0].get('images')
             _id = unpacked_message[0].get('id')
-            
-            if (_id == abs(_id)):
-                link = 'https://vk.com/id{}'.format(_id)
-            else:
-                link = 'https://vk.com/public{}'.format(abs(_id))
-            
-            quote_data = {"qu": qu, "au": au, "images": images, "link": link}
-            collection.insert_one(quote_data)
-            
-            s = -1
-            cursor = collection.find()
-            for line in cursor:
-                s += 1
+            if (qu != '' or len(images) != 0):
+                if (_id == abs(_id)):
+                    link = 'https://vk.com/id{}'.format(_id)
+                else:
+                    link = 'https://vk.com/public{}'.format(abs(_id))
+                
+                quote_data = {"qu": qu, "au": au, "images": images, "link": link}
+                collection.insert_one(quote_data)
+                
+                s = -1
+                cursor = collection.find()
+                for line in cursor:
+                    s += 1
 
-            await Quote.ans_up('https://quote.redmaun.site:2087/index/' + str(s), m)
+                await Quote.ans_up('https://quote.redmaun.site:2087/index/' + str(s), m)
         else:
             qu = []
             for i in range(len(unpacked_message)):
