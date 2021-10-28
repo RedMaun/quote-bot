@@ -1,6 +1,7 @@
 from vkbottle.bot import Blueprint, Message
 from classes.abstract_command import AbstractCommand
 from db.connect import collection 
+from datetime import date, datetime
 import json
 
 bp = Blueprint()
@@ -92,7 +93,12 @@ async def quote(m: Message):
                 else:
                     link = 'https://vk.com/public{}'.format(abs(_id))
                 
-                quote_data = {"qu": qu, "au": au, "images": images, "link": link}
+                today = date.today()
+                d = today.strftime("%d.%m.%Y")
+                t = str(datetime.now().time())[:5]
+                time = d + ' в ' + t
+
+                quote_data = {"qu": qu, "au": au, "images": images, "link": link, "da": time}
                 collection.insert_one(quote_data)
                 
                 s = -1
@@ -107,7 +113,12 @@ async def quote(m: Message):
                     qu.append(unpacked_message[i])
             au = (await bp.api.messages.get_conversations_by_id(peer_ids=m.peer_id)).items[0].chat_settings.title
             
-            quote_data = {"qu": qu, "au": au}
+            today = date.today()
+            d = today.strftime("%d.%m.%Y")
+            t = str(datetime.now().time())[:5]
+            time = d + ' в ' + t
+
+            quote_data = {"qu": qu, "au": au, "da": time}
             collection.insert_one(quote_data)
 
             s = -1
