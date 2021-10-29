@@ -50,7 +50,7 @@ async def unpack(message):
             user = await bp.api.groups.get_by_id(abs(msg.from_id))
             name = user[0].name
             link = 'https://vk.com/public{}'.format(abs(msg.from_id))
-
+        
         return {"id": msg.from_id, "link": link, "name": name, "text": msg.text, "images": images}
         
     mes.append(await unpack_one(message))
@@ -88,31 +88,31 @@ async def quote(m: Message):
         for i in flat_unpack:
             b.append(i["name"])
         if (unpacked_message and len(unpacked_message) == 1):
+            
             qu = unpacked_message[0].get('text')
-            if (qu[0] != '!'):
-                au = unpacked_message[0].get('name')
-                images = unpacked_message[0].get('images')
-                _id = unpacked_message[0].get('id')
-                if (qu != '' or len(images) != 0):
-                    if (_id == abs(_id)):
-                        link = 'https://vk.com/id{}'.format(_id)
-                    else:
-                        link = 'https://vk.com/public{}'.format(abs(_id))
-                    
-                    today = date.today()
-                    d = today.strftime("%d.%m.%Y")
-                    t = str(datetime.now().time())[:5]
-                    time = d + ' в ' + t
+            au = unpacked_message[0].get('name')
+            images = unpacked_message[0].get('images')
+            _id = unpacked_message[0].get('id')
+            if (qu != '' or len(images) != 0):
+                if (_id == abs(_id)):
+                    link = 'https://vk.com/id{}'.format(_id)
+                else:
+                    link = 'https://vk.com/public{}'.format(abs(_id))
+                
+                today = date.today()
+                d = today.strftime("%d.%m.%Y")
+                t = str(datetime.now().time())[:5]
+                time = d + ' в ' + t
 
-                    quote_data = {"qu": qu, "au": au, "images": images, "link": link, "da": time}
-                    collection.insert_one(quote_data)
-                    
-                    s = -1
-                    cursor = collection.find()
-                    for line in cursor:
-                        s += 1
+                quote_data = {"qu": qu, "au": au, "images": images, "link": link, "da": time}
+                collection.insert_one(quote_data)
+                
+                s = -1
+                cursor = collection.find()
+                for line in cursor:
+                    s += 1
 
-                    await Quote.ans_up('https://quote.redmaun.site:2087/index/' + str(s), m)
+                await Quote.ans_up('https://quote.redmaun.site:2087/index/' + str(s), m)
         else:
             qu = []
             if (b.count(b[0]) == len(b)):
