@@ -2,6 +2,7 @@ from vkbottle.bot import Blueprint, Message
 from classes.abstract_command import AbstractCommand
 from db.connect import collection 
 from datetime import date, datetime
+from iteration_utilities import deepflatten
 import json
 
 bp = Blueprint()
@@ -82,43 +83,65 @@ async def quote(m: Message):
         if (unpacked_message and len(unpacked_message) == 1 and isinstance(unpacked_message[0], list)):
             unpacked_message = unpacked_message[0]
 
+        flat_unpack = list(deepflatten(unpacked_message, ignore=dict))
+        b = []
+        for i in flat_unpack:
+            b.append(i["name"])
         if (unpacked_message and len(unpacked_message) == 1):
             qu = unpacked_message[0].get('text')
-            au = unpacked_message[0].get('name')
-            images = unpacked_message[0].get('images')
-            _id = unpacked_message[0].get('id')
-            if (qu != '' or len(images) != 0):
-                if (_id == abs(_id)):
-                    link = 'https://vk.com/id{}'.format(_id)
-                else:
-                    link = 'https://vk.com/public{}'.format(abs(_id))
-                
-                today = date.today()
-                d = today.strftime("%d.%m.%Y")
-                t = str(datetime.now().time())[:5]
-                time = d + ' в ' + t
+            if (qu[0] != '!'):
+                au = unpacked_message[0].get('name')
+                images = unpacked_message[0].get('images')
+                _id = unpacked_message[0].get('id')
+                if (qu != '' or len(images) != 0):
+                    if (_id == abs(_id)):
+                        link = 'https://vk.com/id{}'.format(_id)
+                    else:
+                        link = 'https://vk.com/public{}'.format(abs(_id))
+                    
+                    today = date.today()
+                    d = today.strftime("%d.%m.%Y")
+                    t = str(datetime.now().time())[:5]
+                    time = d + ' в ' + t
 
-                quote_data = {"qu": qu, "au": au, "images": images, "link": link, "da": time}
-                collection.insert_one(quote_data)
-                
-                s = -1
-                cursor = collection.find()
-                for line in cursor:
-                    s += 1
+                    quote_data = {"qu": qu, "au": au, "images": images, "link": link, "da": time}
+                    collection.insert_one(quote_data)
+                    
+                    s = -1
+                    cursor = collection.find()
+                    for line in cursor:
+                        s += 1
 
-                await Quote.ans_up('https://quote.redmaun.site:2087/index/' + str(s), m)
+                    await Quote.ans_up('https://quote.redmaun.site:2087/index/' + str(s), m)
         else:
             qu = []
-            for i in range(len(unpacked_message)):
+            if (b.count(b[0]) == len(b)):
+                for i in flat_unpack:
+                    y = str( {'id': i["id"], 'text': i["text"], 'images': i["images"]} )
+                    a = str(i)
+                    lcls = locals()
+                    res = str(unpacked_message).replace(a, y)
+                    exec('a = ' + res, globals(), lcls)
+                    unpacked_message = lcls["a"]
+                for i in range(len(unpacked_message)):
+                    qu.append(unpacked_message[i])  
+                
+                au = b[0]
+                link = flat_unpack[0]["link"]
+            else:
+                for i in range(len(unpacked_message)):
                     qu.append(unpacked_message[i])
-            au = (await bp.api.messages.get_conversations_by_id(peer_ids=m.peer_id)).items[0].chat_settings.title
-            
+                au = (await bp.api.messages.get_conversations_by_id(peer_ids=m.peer_id)).items[0].chat_settings.title
+                link = ''
+
             today = date.today()
             d = today.strftime("%d.%m.%Y")
             t = str(datetime.now().time())[:5]
             time = d + ' в ' + t
-
-            quote_data = {"qu": qu, "au": au, "da": time}
+            if (link != ''):
+                quote_data = {"qu": qu, "au": au, "da": time, "link": link}
+            else:
+                quote_data = {"qu": qu, "au": au, "da": time}
             collection.insert_one(quote_data)
 
             s = -1
