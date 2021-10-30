@@ -18,7 +18,7 @@ class AbstractCommand():
         return self.description
 
     @staticmethod
-    async def ans_up(ans, m):
+    async def ans_up(ans, m, att = None):
         if (m.text.count(' ') == 0):
             if (m.text == m.text.upper()):
                 up = True
@@ -38,4 +38,11 @@ class AbstractCommand():
                 return True
             else:
                 await m.answer(ans)
+                return True
+        elif (att != None):
+            if (up):
+                await m.answer(default["prefix"], attachment=att)
+                return True
+            else:
+                await m.answer(attachment=att)
                 return True
