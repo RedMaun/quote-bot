@@ -2,7 +2,6 @@ from vkbottle.bot import Blueprint, Message
 from classes.abstract_command import AbstractCommand
 from typing import Optional
 import os
-from time import sleep
 from vkbottle import PhotoMessageUploader
 import json
 from db.connect import collection
