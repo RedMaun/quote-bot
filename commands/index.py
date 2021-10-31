@@ -4,13 +4,11 @@ from typing import Optional
 import os
 from time import sleep
 from vkbottle import PhotoMessageUploader
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 import json
 from db.connect import collection
-from PIL import Image
-from io import BytesIO
 import random
+import asyncio
+from pyppeteer import launch
 
 bp = Blueprint()
 
@@ -19,34 +17,6 @@ config = 'config.json'
 def config_load(config):
     with open(config, 'r') as f:
         return json.load(f)
-
-options = Options()
-options.headless = True
-driver = webdriver.Chrome(executable_path = '/usr/bin/chromedriver', options=options)
-
-def make_screenshot(id):
-    url = "https://quote.redmaun.site/index/{}".format(id)
-    driver.get(url)
-    sleep(2)
-    e = driver.find_element_by_class_name("cont")
-    size = e.size
-    location = e.location
-
-    w, h = size['width'], size['height']
-    driver.set_window_size(1920, h*2)
-
-    png = driver.get_screenshot_as_png()
-    im = Image.open(BytesIO(png))
-
-    left = location['x'] - 20
-    top = location['y'] - 20
-    right = location['x'] + size['width'] + 20
-    bottom = location['y'] + size['height'] + 20
-
-    name = random.randint(100000, 999999)
-    im = im.crop((left, top, right, bottom)) 
-    im.save('/tmp/{}.png'.format(str(name))) 
-    return name
 
 class Command1(AbstractCommand):
     def __init__(self):
@@ -69,12 +39,32 @@ async def index(m: Message, item: Optional[int] = None):
         if (isinstance(item, int) and item < len(quotes)):
             if (item == -1):
                 item = len(quotes) - 1
-            name = make_screenshot(item)
-            if (name):
-                att = await photo_uploader.upload('/tmp/{}.png'.format(str(name)))
+            if os.path.isfile('/tmp/{}.png'.format(str(item))):
+                att = await photo_uploader.upload('/tmp/{}.png'.format(str(item)))
                 await SL.ans_up('', m, att)
             else:
-                await SL.ans_up(default["error"], m)
+                browser = await launch({'headless': True})
+                page = await browser.newPage()
+
+                await page.goto('https://quote.redmaun.site/index/' + str(item))
+                await page.waitForSelector('.cont'); 
+
+                element = await page.querySelector('.cont')
+                box = await element.boundingBox();
+                # print(x, y, w, h)
+                x = box['x'] - 20;                                
+                y = box['y'] - 20;                                
+                w = box['width'] + 40;                            
+                h = box['height'] + 40; 
+                
+                # await element.screenshot({'path': '/tmp/{}.png'.format(str(ind))})
+                await page.screenshot({'path': '/tmp/{}.png'.format(str(item)), 'clip': {'x': x, 'y': y, 'width': w, 'height': h}})
+
+                await browser.close()
+
+                att = await photo_uploader.upload('/tmp/{}.png'.format(str(item)))
+                await SL.ans_up('', m, att)
+
         else:
             await SL.ans_up(default["error"], m)
 
@@ -97,9 +87,32 @@ async def rrandom(m: Message):
             quotes.append(i)
         ind = random.randint(0, len(quotes)-1)
         photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
-        name = make_screenshot(ind)
-        att = await photo_uploader.upload('/tmp/{}.png'.format(str(name)))
-        await Random.ans_up('', m, att)
+        
+        if os.path.isfile('/tmp/{}.png'.format(str(ind))):
+            att = await photo_uploader.upload('/tmp/{}.png'.format(str(ind)))
+            await SL.ans_up('', m, att)
+        else:
+            browser = await launch({'headless': True})
+            page = await browser.newPage()
+
+            await page.goto('https://quote.redmaun.site/index/' + str(ind))
+            await page.waitForSelector('.cont'); 
+
+            element = await page.querySelector('.cont')
+            box = await element.boundingBox();
+            # print(x, y, w, h)
+            x = box['x'] - 20;                                
+            y = box['y'] - 20;                                
+            w = box['width'] + 40;                            
+            h = box['height'] + 40; 
+            
+            # await element.screenshot({'path': '/tmp/{}.png'.format(str(ind))})
+            await page.screenshot({'path': '/tmp/{}.png'.format(str(ind)), 'clip': {'x': x, 'y': y, 'width': w, 'height': h}})
+
+            await browser.close()
+
+            att = await photo_uploader.upload('/tmp/{}.png'.format(str(ind)))
+            await SL.ans_up('', m, att)
 
     except Exception as err:
         await Random.ans_up(err, m)

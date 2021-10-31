@@ -1,2 +1,8 @@
 vkbottle
-
+aiofiles
+selenium
+pymongo
+dnspython
+pillow
+iteration_utilities
+pyppeteer
