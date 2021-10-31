@@ -27,7 +27,7 @@ driver = webdriver.Chrome(executable_path = '/usr/bin/chromedriver', options=opt
 def make_screenshot(id):
     url = "https://quote.redmaun.site/index/{}".format(id)
     driver.get(url)
-    sleep(4)
+    sleep(2)
     e = driver.find_element_by_class_name("cont")
     size = e.size
     location = e.location
@@ -55,7 +55,7 @@ class Command(AbstractCommand):
 SL = Command()
 
 @bp.on.message(text=SL.hdl())
-async def help(m: Message, item: Optional[int] = None):
+async def index(m: Message, item: Optional[int] = None):
     cursor = collection.find({})
     quotes = []
     for i in cursor:
@@ -81,4 +81,26 @@ async def help(m: Message, item: Optional[int] = None):
     except Exception as err:
         await SL.ans_up(err, m)
 
+
+class Command(AbstractCommand):
+    def __init__(self):
+        super().__init__(handler = ['/ведать', '/ВЕДАТЬ', '/random', '/RANDOM'], description = 'display random quote')
+
+Random = Command()
+
+@bp.on.message(text=Random.hdl())
+async def rrandom(m: Message):
+    try:
+        cursor = collection.find({})
+        quotes = []
+        for i in cursor:
+            quotes.append(i)
+        ind = random.randint(0, len(quotes)-1)
+        photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
+        name = make_screenshot(ind)
+        att = await photo_uploader.upload('/tmp/{}.png'.format(str(name)))
+        await Random.ans_up('', m, att)
+
+    except Exception as err:
+        await Random.ans_up(err, m)
 

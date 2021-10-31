@@ -41,7 +41,7 @@ class AbstractCommand():
                 return True
         elif (att != None):
             if (up):
-                await m.answer(default["prefix"], attachment=att)
+                await m.answer(default["prefix"].upper(), attachment=att)
                 return True
             else:
                 await m.answer(attachment=att)
