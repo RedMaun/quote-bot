@@ -23,6 +23,27 @@ class Command1(AbstractCommand):
 
 SL = Command1()
 
+async def screenshit(id):
+    photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
+    browser = await launch({'headless': True, 'defaultViewport': None})
+    page = await browser.newPage()
+    await page.setViewport({'width': 1920, 'height': 1080, 'deviceScaleFactor':3})
+    await page.goto('https://quote.redmaun.site/index/' + str(id))
+    await page.waitForSelector('.cont'); 
+    
+    element = await page.querySelector('.cont')
+    box = await element.boundingBox();
+    x = box['x'] - 20;                                
+    y = box['y'] - 20;                                
+    w = box['width'] + 40;                            
+    h = box['height'] + 40; 
+    
+    await page.screenshot({'path': '/tmp/{}.png'.format(str(id)), 'clip': {'x': x, 'y': y, 'width': w, 'height': h}})
+
+    await browser.close()
+
+    return await photo_uploader.upload('/tmp/{}.png'.format(str(id)))
+
 @bp.on.message(text=SL.hdl())
 async def index(m: Message, item: Optional[int] = None):
     cursor = collection.find({})
@@ -30,7 +51,6 @@ async def index(m: Message, item: Optional[int] = None):
     for i in cursor:
         quotes.append(i)
     
-    photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
     data = config_load(config)
     default = data["default"]
     try:
@@ -39,30 +59,11 @@ async def index(m: Message, item: Optional[int] = None):
             if (item == -1):
                 item = len(quotes) - 1
             if os.path.isfile('/tmp/{}.png'.format(str(item))):
+                photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
                 att = await photo_uploader.upload('/tmp/{}.png'.format(str(item)))
                 await SL.ans_up('', m, att)
             else:
-                browser = await launch({'headless': True})
-                page = await browser.newPage()
-
-                await page.goto('https://quote.redmaun.site/index/' + str(item))
-                await page.waitForSelector('.cont'); 
-
-                element = await page.querySelector('.cont')
-                box = await element.boundingBox();
-                # print(x, y, w, h)
-                x = box['x'] - 20;                                
-                y = box['y'] - 20;                                
-                w = box['width'] + 40;                            
-                h = box['height'] + 40; 
-                
-                # await element.screenshot({'path': '/tmp/{}.png'.format(str(ind))})
-                await page.screenshot({'path': '/tmp/{}.png'.format(str(item)), 'clip': {'x': x, 'y': y, 'width': w, 'height': h}})
-
-                await browser.close()
-
-                att = await photo_uploader.upload('/tmp/{}.png'.format(str(item)))
-                await SL.ans_up('', m, att)
+                await SL.ans_up('', m, await screenshit(item))
 
         else:
             await SL.ans_up(default["error"], m)
@@ -88,30 +89,11 @@ async def rrandom(m: Message):
         photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
         
         if os.path.isfile('/tmp/{}.png'.format(str(ind))):
+            photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
             att = await photo_uploader.upload('/tmp/{}.png'.format(str(ind)))
             await SL.ans_up('', m, att)
         else:
-            browser = await launch({'headless': True})
-            page = await browser.newPage()
-
-            await page.goto('https://quote.redmaun.site/index/' + str(ind))
-            await page.waitForSelector('.cont'); 
-
-            element = await page.querySelector('.cont')
-            box = await element.boundingBox();
-            # print(x, y, w, h)
-            x = box['x'] - 20;                                
-            y = box['y'] - 20;                                
-            w = box['width'] + 40;                            
-            h = box['height'] + 40; 
-            
-            # await element.screenshot({'path': '/tmp/{}.png'.format(str(ind))})
-            await page.screenshot({'path': '/tmp/{}.png'.format(str(ind)), 'clip': {'x': x, 'y': y, 'width': w, 'height': h}})
-
-            await browser.close()
-
-            att = await photo_uploader.upload('/tmp/{}.png'.format(str(ind)))
-            await SL.ans_up('', m, att)
+            await SL.ans_up('', m, await screenshit(ind))
 
     except Exception as err:
         await Random.ans_up(err, m)
