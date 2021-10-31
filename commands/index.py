@@ -48,11 +48,11 @@ def make_screenshot(id):
     im.save('/tmp/{}.png'.format(str(name))) 
     return name
 
-class Command(AbstractCommand):
+class Command1(AbstractCommand):
     def __init__(self):
         super().__init__(handler = ['/сь <item>', '/СЬ <item>'], description = 'display specific quote')
 
-SL = Command()
+SL = Command1()
 
 @bp.on.message(text=SL.hdl())
 async def index(m: Message, item: Optional[int] = None):
@@ -82,11 +82,11 @@ async def index(m: Message, item: Optional[int] = None):
         await SL.ans_up(err, m)
 
 
-class Command(AbstractCommand):
+class Command2(AbstractCommand):
     def __init__(self):
         super().__init__(handler = ['/ведать', '/ВЕДАТЬ', '/random', '/RANDOM'], description = 'display random quote')
 
-Random = Command()
+Random = Command2()
 
 @bp.on.message(text=Random.hdl())
 async def rrandom(m: Message):

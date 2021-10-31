@@ -28,6 +28,11 @@ async def help(m: Message):
         try:
             help_list.append(', '.join(eval('commands.{}.Command().hdl()'.format(methods[i]))) + ' - ' + str(eval('commands.{}.Command().dsc()'.format(methods[i]))))
         except:
-            pass
+            try:
+                help_list.append(', '.join(eval('commands.{}.Command1().hdl()'.format(methods[i]))) + ' - ' + str(eval('commands.{}.Command1().dsc()'.format(methods[i]))))
+                help_list.append(', '.join(eval('commands.{}.Command2().hdl()'.format(methods[i]))) + ' - ' + str(eval('commands.{}.Command2().dsc()'.format(methods[i]))))
+            except:
+                pass
     await Help.ans_up('\n'.join(help_list), m)
+
     
