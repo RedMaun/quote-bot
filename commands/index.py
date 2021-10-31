@@ -19,7 +19,7 @@ def config_load(config):
 
 class Command1(AbstractCommand):
     def __init__(self):
-        super().__init__(handler = ['/сь <item>', '/СЬ <item>'], description = 'display specific quote')
+        super().__init__(handler = ['/сь <item>', '/СЬ <item>', '/спокойной', '/СПОКОЙНОЙ'], description = 'display specific quote')
 
 SL = Command1()
 
@@ -50,26 +50,28 @@ async def index(m: Message, item: Optional[int] = None):
     quotes = []
     for i in cursor:
         quotes.append(i)
-    
-    data = config_load(config)
-    default = data["default"]
-    try:
-        item = int(item)
-        if (isinstance(item, int) and item < len(quotes)):
-            if (item == -1):
-                item = len(quotes) - 1
-            if os.path.isfile('/tmp/{}.png'.format(str(item))):
-                photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
-                att = await photo_uploader.upload('/tmp/{}.png'.format(str(item)))
-                await SL.ans_up('', m, att)
+    if (m.text[:10].lower() == '/спокойной'):
+        await SL.ans_up(quotes[17]["qu"], m)
+    else:
+        data = config_load(config)
+        default = data["default"]
+        try:
+            item = int(item)
+            if (isinstance(item, int) and item < len(quotes)):
+                if (item == -1):
+                    item = len(quotes) - 1
+                if os.path.isfile('/tmp/{}.png'.format(str(item))):
+                    photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
+                    att = await photo_uploader.upload('/tmp/{}.png'.format(str(item)))
+                    await SL.ans_up('', m, att)
+                else:
+                    await SL.ans_up('', m, await screenshit(item))
+
             else:
-                await SL.ans_up('', m, await screenshit(item))
+                await SL.ans_up(default["error"], m)
 
-        else:
-            await SL.ans_up(default["error"], m)
-
-    except Exception as err:
-        await SL.ans_up(err, m)
+        except Exception as err:
+            await SL.ans_up(err, m)
 
 
 class Command2(AbstractCommand):

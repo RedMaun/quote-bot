@@ -117,7 +117,7 @@ async def quote(m: Message):
                 for line in cursor:
                     s += 1
 
-                await Quote.ans_up('https://quote.redmaun.site:2087/index/' + str(s), m)
+                await Quote.ans_up('https://quote.redmaun.site/index/' + str(s), m)
         else:
             qu = []
             if (b.count(b[0]) == len(b)):
