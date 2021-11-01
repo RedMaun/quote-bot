@@ -28,11 +28,11 @@ def get_photo(b):
 
 async def unpack(message):
     mes = []
-    try:
-        mess = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.conversation_message_id, peer_id=message.peer_id)
-        message = mess.items[0]
-    except:
-        pass
+    # try:
+    #     mess = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.conversation_message_id, peer_id=message.peer_id)
+    #     message = mess.items[0]
+    # except:
+    #     pass
     async def unpack_one(msg):
         images = []
         if (msg.attachments):
