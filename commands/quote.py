@@ -60,7 +60,7 @@ async def unpack(message):
         #     mess_reply = mess_reply.items[0]
         # except:
         #     pass
-        mes.append(await unpack(mess_reply))
+        mes.append(await unpack(message.reply_message))
     elif (message.fwd_messages):
         for i in range(len(message.fwd_messages)):
             mess = message.fwd_messages[i]
