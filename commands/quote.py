@@ -55,20 +55,20 @@ async def unpack(message):
         
     mes.append(await unpack_one(message))
     if (message.reply_message):
-        try:
-            mess_reply = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.reply_message.conversation_message_id, peer_id=message.peer_id)
-            mess_reply = mess_reply.items[0]
-        except:
-            pass
+        # try:
+        #     mess_reply = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.reply_message.conversation_message_id, peer_id=message.peer_id)
+        #     mess_reply = mess_reply.items[0]
+        # except:
+        #     pass
         mes.append(await unpack(mess_reply))
     elif (message.fwd_messages):
         for i in range(len(message.fwd_messages)):
             mess = message.fwd_messages[i]
-            try:
-                mess = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.fwd_messages[i].conversation_message_id, peer_id=message.peer_id)
-                mess = mess.items[0]
-            except:
-                pass
+            # try:
+            #     mess = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=message.fwd_messages[i].conversation_message_id, peer_id=message.peer_id)
+            #     mess = mess.items[0]
+            # except:
+            #     pass
             mes.append(await unpack(mess))
 
     return mes
@@ -77,12 +77,18 @@ async def unpack(message):
 async def quote(m: Message):
     try:
         if (m.reply_message):
-            mes = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=m.reply_message.conversation_message_id, peer_id=m.peer_id)
-            mes = mes.items[0]
+            try:
+                mes = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=m.reply_message.conversation_message_id, peer_id=m.peer_id)
+                mes = mes.items[0]
+            except:
+                mes = m.reply_message
             unpacked_message = await unpack(mes)
         elif (m.fwd_messages):
-            mes = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=m.conversation_message_id, peer_id=m.peer_id)
-            mes = mes.items[0]
+            try:
+                mes = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=m.conversation_message_id, peer_id=m.peer_id)
+                mes = mes.items[0]
+            except:
+                mes = m.fwd_messages
             unpacked_message = await unpack(mes)
             unpacked_message.pop(0)
         if (unpacked_message and len(unpacked_message) == 1 and isinstance(unpacked_message[0], list)):
