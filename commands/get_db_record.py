@@ -39,7 +39,7 @@ async def list(m: Message, item: Optional[int] = None, ite: Optional[str] = None
                 else:
                     obj = parse_json(quotes[item])
                     
-                    a = str(json.dumps(ob, indent=4, sort_keys=True, ensure_ascii=False)).replace('    ', 'ᅠ')
+                    a = str(json.dumps(obj, indent=4, sort_keys=True, ensure_ascii=False)).replace('    ', 'ᅠ')
                     #print(str(json.dumps(obj, indent=4, sort_keys=True, ensure_ascii=False)))
                     await Record.ans_up(a, m)
         except Exception as e:

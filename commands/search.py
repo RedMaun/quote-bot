@@ -16,7 +16,7 @@ def config_load(config):
 
 class Command(AbstractCommand):
     def __init__(self):
-        super().__init__(handler = ['/поиск <quote>', '/ПОИСК <quote>'], description = 'search db record')
+        super().__init__(handler = ['/поиск <quote> filter=<filterr>', '/поиск <quote>', '/ПОИСК <quote> filter=<filterr>', '/ПОИСК <quote>'], description = 'search db record')
 
 
 Search = Command()
@@ -26,7 +26,7 @@ def parse_json(data):
 
 
 @bp.on.message(text = Search.hdl())
-async def sear(m: Message, quote: Optional[str] = None):
+async def sear(m: Message, quote: Optional[str] = None, filterr: Optional[str] = None):
     try:
         cur = collection.aggregate([ { '$search': { 'index': 'text', 'text': { 'query': quote, 'path': { 'wildcard': '*' } } } } ])
         cursor = collection.find({})
@@ -43,7 +43,6 @@ async def sear(m: Message, quote: Optional[str] = None):
         
         qtes = []
         for i in cur:
-            # print(i)
             if ("qu" in i and isinstance(i["qu"], dict) or "qu" in i and isinstance(i["qu"], list) and isinstance(list(deepflatten(i["qu"], ignore=dict))[0], dict)):
                 c = list(deepflatten(i["qu"], ignore=dict))
                 text = []
@@ -56,28 +55,43 @@ async def sear(m: Message, quote: Optional[str] = None):
 
             elif isinstance("qu" in i and i["qu"], str):
                 qtes.append('https://quote.redmaun.site/index/'+str(b.index(i["qu"])) + '\n' + str(i["qu"]))
-
-        n = len('\n\n'.join(qtes))
+        
         k = 4096
-        if (n > k):
-            symbols_per_message = int(k / len(qtes))
-            if (symbols_per_message > 100):
-                for i in range(len(qtes)):
-                    if (len(qtes[i][:symbols_per_message -3]) != len(qtes[i])):
-                        qtes[i] = qtes[i][:symbols_per_message - 1] + '…'
+        if (filterr != None and filterr == "all"):
+            n = len('\n\n'.join(qtes))
+            if (n > k):
+                symbols_per_message = int(k / len(qtes))
+                if (symbols_per_message > 100):
+                    for i in range(len(qtes)):
+                        if (len(qtes[i][:symbols_per_message -3]) != len(qtes[i])):
+                            qtes[i] = qtes[i][:symbols_per_message - 1] + '…'
+                        else:
+                            qtes[i] = qtes[i][:symbols_per_message - 1]
+                else:
+                    while symbols_per_message < 100:
+                        qtes.pop(-1)
+                        symbols_per_message = int(k / len(qtes))
+
+                    for i in range(len(qtes)):
+                        if (len(qtes[i][:symbols_per_message -3]) != len(qtes[i])):
+                            qtes[i] = qtes[i][:symbols_per_message - 1] + '…'
+                        else:
+                            qtes[i] = qtes[i][:symbols_per_message - 1]
+        else:
+            b = []
+            if len(qtes) > 3:
+                for i in range(0, 3):
+                    if (len(qtes[i][:150]) != len(qtes[i])):
+                        b.append(qtes[i][:150] + '…')
                     else:
-                        qtes[i] = qtes[i][:symbols_per_message - 1]
+                        b.append(qtes[i][:150])
+                qtes = b
             else:
-                while symbols_per_message < 100:
-                    qtes.pop(-1)
-                    symbols_per_message = int(k / len(qtes))
-
                 for i in range(len(qtes)):
-                    if (len(qtes[i][:symbols_per_message -3]) != len(qtes[i])):
-                        qtes[i] = qtes[i][:symbols_per_message - 1] + '…'
+                    if (len(qtes[i][:150]) != len(qtes[i])):
+                        qtes[i] = qtes[i][:150] + '…'
                     else:
-                        qtes[i] = qtes[i][:symbols_per_message - 1]
-
+                        qtes[i] = qtes[i][:150]
 
         await Search.ans_up('\n\n'.join(qtes), m)
 
