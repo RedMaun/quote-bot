@@ -6,3 +6,5 @@ dnspython
 pillow
 iteration_utilities
 pyppeteer
+pygal
+cairosvg
