@@ -1,6 +1,7 @@
 from vkbottle.bot import Blueprint, Message
 from classes.abstract_command import AbstractCommand
 from db.connect import collection 
+from typing import Optional
 from datetime import date, datetime
 from iteration_utilities import deepflatten
 import json
@@ -15,7 +16,7 @@ def config_load(config):
 
 class Command(AbstractCommand):
     def __init__(self):
-        super().__init__(handler = ['/сьлржалсч', '/СЬЛРЖАЛСЧ'], description = 'make quote from message')
+        super().__init__(handler = ['/сьлржалсч', '/сьлржалсч —глубинность <deep>', '/сьлржалсч —d <deep>', '/СЬЛРЖАЛСЧ', '/СЬЛРЖАЛСЧ —глубинность <deep>', '/СЬЛРЖАЛСЧ —d <deep>'], description = 'make quote from message')
 
 Quote = Command()
 
@@ -97,11 +98,8 @@ async def unpack(message, peer = None):
     return mes
 
 @bp.on.message(text=Quote.hdl())
-async def quote(m: Message):
-    # a = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=m.reply_message.conversation_message_id, peer_id=m.peer_id)
-    # a = a.items[0]
-    # print(await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=a.reply_message.conversation_message_id, peer_id=m.peer_id))
-    # try:
+async def quote(m: Message, deep: Optional[str] = None):
+    print(deep)
     if (m.reply_message):
         try:
             mes = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=m.reply_message.conversation_message_id, peer_id=m.peer_id)
@@ -122,8 +120,28 @@ async def quote(m: Message):
         unpacked_message.pop(0)
     if (unpacked_message and len(unpacked_message) == 1 and isinstance(unpacked_message[0], list)):
         unpacked_message = unpacked_message[0]
+    if (deep != None and int(deep) != 0):
+        deep = int(deep)
+        flat_unpack = list(deepflatten(unpacked_message, ignore=dict, depth=deep))
+        unpacked_message = list(deepflatten(unpacked_message, ignore=dict, depth=deep))
 
-    flat_unpack = list(deepflatten(unpacked_message, ignore=dict))
+        b = []
+        for i in range(len(unpacked_message)):
+            if (not isinstance(unpacked_message[i], list)):
+                b.append(unpacked_message[i])
+        unpacked_message = b 
+
+        b = []
+        for i in range(len(flat_unpack)):
+            if (not isinstance(flat_unpack[i], list)):
+                b.append(flat_unpack[i])
+        flat_unpack = b    
+        print(unpacked_message)
+        print(flat_unpack)
+
+    else:
+        flat_unpack = list(deepflatten(unpacked_message, ignore=dict))
+
     b = []
     for i in flat_unpack:
         b.append(i["name"])
