@@ -33,6 +33,8 @@ async def help(m: Message):
                 help_list.append(', '.join(eval('commands.{}.Command2().hdl()'.format(methods[i]))) + ' - ' + str(eval('commands.{}.Command2().dsc()'.format(methods[i]))))
             except:
                 pass
-    await Help.ans_up('\n'.join(help_list), m)
+    
+    help_list.append('-----------------------------------------------------------------------------\nGithub - https://github.com/RedMaun/quote-bot')
+    await Help.ans_up('\n\n'.join(help_list), m)
 
     

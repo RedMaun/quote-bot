@@ -58,8 +58,9 @@ async def index(m: Message, item: Optional[int] = None):
         try:
             item = int(item)
             if (isinstance(item, int) and item < len(quotes)):
-                if (item == -1):
-                    item = len(quotes) - 1
+                if (item != abs(item)):
+                    item = len(quotes) - abs(item)
+
                 if os.path.isfile('/tmp/{}.png'.format(str(item))):
                     photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
                     att = await photo_uploader.upload('/tmp/{}.png'.format(str(item)))

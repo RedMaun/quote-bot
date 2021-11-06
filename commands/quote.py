@@ -136,11 +136,30 @@ async def quote(m: Message, deep: Optional[str] = None):
             if (not isinstance(flat_unpack[i], list)):
                 b.append(flat_unpack[i])
         flat_unpack = b    
-        print(unpacked_message)
-        print(flat_unpack)
 
     else:
         flat_unpack = list(deepflatten(unpacked_message, ignore=dict))
+        def kostil(unp, unp_flat):
+            unp = list(deepflatten(unp, ignore=dict, depth=1))
+            unp_flat = list(deepflatten(unp_flat, ignore=dict, depth=1))
+
+            b = []
+            for i in range(len(unp)):
+                if (not isinstance(unp[i], list)):
+                    b.append(unp[i])
+            c = []
+            for i in range(len(unp_flat)):
+                if (not isinstance(unp_flat[i], list)):
+                    c.append(unp_flat[i])
+                    
+            return b, c
+
+        for x in range(len(flat_unpack)):
+            for y in range(x + 1, len(flat_unpack)):
+                if (flat_unpack[x] == flat_unpack[y]):
+                    unpacked_message, flat_unpack = kostil(unpacked_message, flat_unpack)
+                    break
+
 
     b = []
     for i in flat_unpack:
