@@ -16,7 +16,7 @@ def config_load(config):
 
 class Command(AbstractCommand):
     def __init__(self):
-        super().__init__(handler = ['/сьлржалсч', '/сьлржалсч —глубинность <deep>', '/сьлржалсч —d <deep>', '/СЬЛРЖАЛСЧ', '/СЬЛРЖАЛСЧ —глубинность <deep>', '/СЬЛРЖАЛСЧ —d <deep>'], description = 'make quote from message')
+        super().__init__(handler = ['/сьлржалсч', '/сьлржалсч —глубинность <deep>', '/сьлржалсч —d <deep>', '/СЬЛРЖАЛСЧ', '/СЬЛРЖАЛСЧ —глубинность <deep>', '/СЬЛРЖАЛСЧ —d <deep>'], description = 'make quote from message; /сьлржалсч —d 0 to cut all reply and forward messages, 1 to cut all messages farther than 1 reply message')
 
 Quote = Command()
 
@@ -99,7 +99,6 @@ async def unpack(message, peer = None):
 
 @bp.on.message(text=Quote.hdl())
 async def quote(m: Message, deep: Optional[str] = None):
-    print(deep)
     if (m.reply_message):
         try:
             mes = await bp.api.messages.get_by_conversation_message_id(conversation_message_ids=m.reply_message.conversation_message_id, peer_id=m.peer_id)
@@ -118,9 +117,9 @@ async def quote(m: Message, deep: Optional[str] = None):
             mes = m.fwd_messages
         unpacked_message = await unpack(mes)
         unpacked_message.pop(0)
-    if (unpacked_message and len(unpacked_message) == 1 and isinstance(unpacked_message[0], list)):
-        unpacked_message = unpacked_message[0]
-    if (deep != None and int(deep) != 0):
+    if (unpacked_message and isinstance(unpacked_message[0], list)):
+        unpacked_message = list(deepflatten(unpacked_message, ignore=dict, depth=1))
+    if (deep != None):
         deep = int(deep)
         flat_unpack = list(deepflatten(unpacked_message, ignore=dict, depth=deep))
         unpacked_message = list(deepflatten(unpacked_message, ignore=dict, depth=deep))
@@ -140,8 +139,8 @@ async def quote(m: Message, deep: Optional[str] = None):
     else:
         flat_unpack = list(deepflatten(unpacked_message, ignore=dict))
         def kostil(unp, unp_flat):
-            unp = list(deepflatten(unp, ignore=dict, depth=1))
-            unp_flat = list(deepflatten(unp_flat, ignore=dict, depth=1))
+            unp = list(deepflatten(unp, ignore=dict, depth=0))
+            unp_flat = list(deepflatten(unp_flat, ignore=dict, depth=0))
 
             b = []
             for i in range(len(unp)):

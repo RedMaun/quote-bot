@@ -1,12 +1,13 @@
 from vkbottle.bot import Blueprint, Message
 import sys, os, pkgutil
 from classes.abstract_command import AbstractCommand
+from typing import Optional
 
 bp = Blueprint()
 
 class Command(AbstractCommand):
     def __init__(self):
-        super().__init__(handler = ['/help', '/HELP', '/хелп', '/ХЕЛП'], description = 'shows commands usage')
+        super().__init__(handler = ['/help', '/help <item>', '/HELP', '/HELP <item>', '/хелп', '/хелп <item>', '/ХЕЛП', '/ХЕЛП <item>'], description = 'shows commands usage')
 
 Help = Command()
 
@@ -21,7 +22,7 @@ sys.path.insert(0, '..')
 import commands
 
 @bp.on.message(text=Help.hdl())
-async def help(m: Message):
+async def help(m: Message, item: Optional[str] = None):
     methods = [name for _, name, _ in pkgutil.iter_modules(['commands'])]
     help_list = []
     for i in range(len(methods)):
@@ -34,7 +35,13 @@ async def help(m: Message):
             except:
                 pass
     
-    help_list.append('-----------------------------------------------------------------------------\nGithub - https://github.com/RedMaun/quote-bot')
-    await Help.ans_up('\n\n'.join(help_list), m)
+    if (item):
+        for i in help_list:
+            if item in i:
+                await Help.ans_up(i, m)
+                break
+    else:
+        help_list.append('-----------------------------------------------------------------------------\nGithub - https://github.com/RedMaun/quote-bot')
+        await Help.ans_up('\n\n'.join(help_list), m)
 
     

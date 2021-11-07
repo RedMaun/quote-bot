@@ -22,7 +22,7 @@ class Command(AbstractCommand):
 Stat = Command()
 
 @bp.on.message(text = Stat.hdl())
-async def sear(m: Message, n: Optional[int] = None, item: Optional[int] = None):
+async def statist(m: Message, n: Optional[int] = None, item: Optional[int] = None):
     photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
     try:
         if (n != None and int(n) == 1):
