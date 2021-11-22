@@ -61,13 +61,19 @@ async def unpack(message, peer = None):
     
     async def unpack_one(msg):
         images = []
+        audio = ''
         if (msg.attachments):
             for i in range(len(msg.attachments)):
                 if (msg.attachments[i].photo):
                     images.append(get_photo(msg.attachments[i].photo.sizes))
                 elif (msg.attachments[i].doc):
                     images.append(msg.attachments[i].doc.url)
-
+                elif (msg.attachments[i].graffiti):
+                    images.append(msg.attachments[i].graffiti.url)
+                elif (msg.attachments[i].sticker):
+                    images.append(msg.attachments[i].sticker.images[-1].url)
+                elif (msg.attachments[i].audio_message):
+                    audio = msg.attachments[i].audio_message.link_mp3
         if (msg.from_id == abs(msg.from_id)):
             user = await bp.api.users.get(msg.from_id)
             name = user[0].first_name + ' ' + user[0].last_name
@@ -76,8 +82,10 @@ async def unpack(message, peer = None):
             user = await bp.api.groups.get_by_id(abs(msg.from_id))
             name = user[0].name
             link = 'https://vk.com/public{}'.format(abs(msg.from_id))
-        
-        return {"id": msg.from_id, "link": link, "name": name, "text": msg.text, "images": images}
+        if (audio != ''):
+            return {"id": msg.from_id, "link": link, "name": name, "text": msg.text, "audio": audio, "images": []}
+        else:
+            return {"id": msg.from_id, "link": link, "name": name, "text": msg.text, "images": images}
         
     mes.append(await unpack_one(message))
     if (message.reply_message):
@@ -155,9 +163,10 @@ async def quote(m: Message, deep: Optional[str] = None):
             
             qu = unpacked_message[0].get('text')
             au = unpacked_message[0].get('name')
+            audio = unpacked_message[0].get('audio')
             images = unpacked_message[0].get('images')
             _id = unpacked_message[0].get('id')
-            if (qu != '' or len(images) != 0):
+            if (audio != None or qu != '' or len(images) != 0):
                 if (_id == abs(_id)):
                     link = 'https://vk.com/id{}'.format(_id)
                 else:
@@ -167,8 +176,10 @@ async def quote(m: Message, deep: Optional[str] = None):
                 d = today.strftime("%d.%m.%Y")
                 t = str(datetime.now().time())[:5]
                 time = d + ' в ' + t
-
-                quote_data = {"qu": qu, "au": au, "images": images, "link": link, "da": time}
+                if (audio):
+                    quote_data = {"qu": qu, "au": au, "audio": audio, "images": images, "link": link, "da": time}
+                else:
+                    quote_data = {"qu": qu, "au": au, "images": images, "link": link, "da": time}
                 collection.insert_one(quote_data)
                 
                 s = -1
@@ -181,7 +192,10 @@ async def quote(m: Message, deep: Optional[str] = None):
             qu = []
             if (b.count(b[0]) == len(b)):
                 for i in flat_unpack:
-                    y = str( {'id': i["id"], 'text': i["text"], 'images': i["images"]} )
+                    if i["audio"]:
+                        y = str( {'id': i["id"], 'audio': i["audio"], 'text': i["text"], 'images': i["images"]} )
+                    else: 
+                        y = str( {'id': i["id"], 'text': i["text"], 'images': i["images"]} )
                     a = str(i)
                     lcls = locals()
                     res = str(unpacked_message).replace(a, y)
