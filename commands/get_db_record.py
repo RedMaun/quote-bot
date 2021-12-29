@@ -30,6 +30,7 @@ async def list(m: Message, item: Optional[int] = None, ite: Optional[str] = None
         quotes = []
         for i in cursor:
             quotes.append(i)
+        print(len(quotes))
         try:
             item = int(item)
             if (isinstance(item, int)):
@@ -40,7 +41,7 @@ async def list(m: Message, item: Optional[int] = None, ite: Optional[str] = None
                     obj = parse_json(quotes[item])
                     
                     a = str(json.dumps(obj, indent=4, sort_keys=True, ensure_ascii=False)).replace('    ', 'ᅠ')
-                    #print(str(json.dumps(obj, indent=4, sort_keys=True, ensure_ascii=False)))
+
                     await Record.ans_up(a, m)
         except Exception as e:
             await Record.ans_up(e, m)

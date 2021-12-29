@@ -8,3 +8,5 @@ iteration_utilities
 pyppeteer
 pygal
 cairosvg
+pandas
+pyparsing

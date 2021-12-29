@@ -128,7 +128,7 @@ async def ex(m: Message, item: Optional[str] = None):
 
         elif (item[:5] == 'calc '):
             item = item[5:]
-            await e.ans_up(nsp.eval(item), m)
+            await e.ans_up(str(nsp.eval(item)), m)
 
         # elif (m.from_id == super_admin):
         #     await e.ans_up((popen(str(item)).read()), m)
