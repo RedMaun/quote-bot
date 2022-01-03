@@ -52,7 +52,8 @@ async def statist(m: Message, n: Optional[int] = None, item: Optional[int] = Non
                     if (isinstance(i["qu"], dict) or isinstance(i["qu"], list) and isinstance(list(deepflatten(i["qu"], ignore=dict))[0], dict)):
                         c = list(deepflatten(i["qu"], ignore=dict))
                         for g in c:
-                            qu += ' '.join(g["text"].split('\n')).lower() + ' '
+                            if "text" in g:
+                                qu += ' '.join(g["text"].split('\n')).lower() + ' '
                     elif (isinstance(i["qu"], list)):
                         for g in i["qu"]:
                             qu += ' '.join(g.split('\n')).lower() + ' '
