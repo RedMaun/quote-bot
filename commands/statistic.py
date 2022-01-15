@@ -30,13 +30,17 @@ async def statist(m: Message, n: Optional[int] = None, item: Optional[int] = Non
             authors = []
             for i in cursor:
                 if ("au" in i):
-                    authors.append(i["au"])
+                    if "FREESPEAK" in i["au"]:
+                        authors.append("FREESPEAK")
+                    else:
+                        authors.append(i["au"])
             orig = list(set(authors))
             line_chart = pygal.HorizontalBar()
             line_chart.title = 'Количество цитат от определенного автора'
             b = []
             for i in range(len(orig)):
-                b.append([authors.count(orig[i]), orig[i]])
+                if authors.count(orig[i]) > 1:
+                    b.append([authors.count(orig[i]), orig[i]])
             b = sorted(b, reverse=True)
             for i in b:
                 line_chart.add(i[1], i[0])
@@ -44,39 +48,39 @@ async def statist(m: Message, n: Optional[int] = None, item: Optional[int] = Non
             cairosvg.svg2png(bytestring=line_chart.render(is_unicode=True).encode('utf8'), write_to='/tmp/{}.png'.format(name))
             graph = await photo_uploader.upload('/tmp/{}.png'.format(name))
             await Stat.ans_up('', m, graph)
-        elif (n != None and int(n) == 2):
-            qu = ''
-            cursor = collection.find({})
-            for i in cursor:
-                if ("qu" in i):
-                    if (isinstance(i["qu"], dict) or isinstance(i["qu"], list) and isinstance(list(deepflatten(i["qu"], ignore=dict))[0], dict)):
-                        c = list(deepflatten(i["qu"], ignore=dict))
-                        for g in c:
-                            if "text" in g:
-                                qu += ' '.join(g["text"].split('\n')).lower() + ' '
-                    elif (isinstance(i["qu"], list)):
-                        for g in i["qu"]:
-                            qu += ' '.join(g.split('\n')).lower() + ' '
-                    elif (isinstance(i["qu"], str)):
-                        qu += ' '.join(i["qu"].split('\n')).lower() + ' '
+        # elif (n != None and int(n) == 2):
+        #     qu = ''
+        #     cursor = collection.find({})
+        #     for i in cursor:
+        #         if ("qu" in i):
+        #             if (isinstance(i["qu"], dict) or isinstance(i["qu"], list) and isinstance(list(deepflatten(i["qu"], ignore=dict))[0], dict)):
+        #                 c = list(deepflatten(i["qu"], ignore=dict))
+        #                 for g in c:
+        #                     if "text" in g:
+        #                         qu += ' '.join(g["text"].split('\n')).lower() + ' '
+        #             elif (isinstance(i["qu"], list)):
+        #                 for g in i["qu"]:
+        #                     qu += ' '.join(g.split('\n')).lower() + ' '
+        #             elif (isinstance(i["qu"], str)):
+        #                 qu += ' '.join(i["qu"].split('\n')).lower() + ' '
             
-            qu = qu.replace(',', '').replace('.', '').replace('!', '').replace(':', '')
-            qu = qu.split(' ')
-            orig = list(set(qu))
-            b = []
-            for i in orig:
-                if qu.count(i) > 4 and len(i) > 2:
-                    b.append([qu.count(i), i])
+        #     qu = qu.replace(',', '').replace('.', '').replace('!', '').replace(':', '')
+        #     qu = qu.split(' ')
+        #     orig = list(set(qu))
+        #     b = []
+        #     for i in orig:
+        #         if qu.count(i) > 4 and len(i) > 2:
+        #             b.append([qu.count(i), i])
 
-            b = sorted(b, reverse=True)
-            line_chart = pygal.HorizontalBar()
-            line_chart.title = 'Самое популярное слово'
-            for i in b:
-                line_chart.add(i[1], i[0])
-            name = str(rand(100000, 999999))
-            cairosvg.svg2png(bytestring=line_chart.render(is_unicode=True).encode('utf8'), write_to='/tmp/{}.png'.format(name))
-            graph = await photo_uploader.upload('/tmp/{}.png'.format(name))
-            await Stat.ans_up('', m, graph)
+        #     b = sorted(b, reverse=True)
+        #     line_chart = pygal.HorizontalBar()
+        #     line_chart.title = 'Самое популярное слово'
+        #     for i in b:
+        #         line_chart.add(i[1], i[0])
+        #     name = str(rand(100000, 999999))
+        #     cairosvg.svg2png(bytestring=line_chart.render(is_unicode=True).encode('utf8'), write_to='/tmp/{}.png'.format(name))
+        #     graph = await photo_uploader.upload('/tmp/{}.png'.format(name))
+        #     await Stat.ans_up('', m, graph)
             
 
         elif (n != None and int(n) == 0 or n == None):
