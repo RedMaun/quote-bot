@@ -29,7 +29,7 @@ async def list(m: Message, item: Optional[int] = None):
             file = os.path.join(
                 config_content['banners_dir'],
                 min([(os.stat(os.path.join(config_content['banners_dir'],filename))[stat.ST_CTIME], filename)
-                    for filename in files_list], key=lambda x: tuple.__getitem__(x, 0))[1])
+                    for filename in files_list], key=lambda x: x[0])[1])
             os.remove(file)
         os.replace(os.path.join(config_content['pics_dir'], banner.split('/')[-1]), file)
     await Banner.ans_up(config_content['default']['ok'], m)
