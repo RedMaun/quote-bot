@@ -4,13 +4,14 @@ from typing import Optional
 import os
 from vkbottle import PhotoMessageUploader
 import json
-from db.connect import collection
+from db.connect import db
 import random
 import asyncio
 from pyppeteer import launch
 
 bp = Blueprint()
 
+chats = 'chats.json'
 config = 'config.json'
 
 def config_load(config):
@@ -19,16 +20,16 @@ def config_load(config):
 
 class Command1(AbstractCommand):
     def __init__(self):
-        super().__init__(handler = ['/сь <item>', '/СЬ <item>', '/спокойной', '/СПОКОЙНОЙ'], description = 'display specific quote')
+        super().__init__(handler = ['/сь <item>', '/СЬ <item>'], description = 'display specific quote')
 
 SL = Command1()
 
-async def screenshit(id):
+async def screenshit(chat, id):
     photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
     browser = await launch({'headless': True, 'defaultViewport': None})
     page = await browser.newPage()
-    await page.setViewport({'width': 1920, 'height': 1080, 'deviceScaleFactor':3})
-    await page.goto('https://quote.redmaun.site/index/' + str(id))
+    await page.setViewport({'width': 1920, 'height': 1080, 'deviceScaleFactor':1})
+    await page.goto('https://quote.redmaun.site/' + str(chat) + '/' + str(id))
     await page.waitForSelector('.cont'); 
     
     element = await page.querySelector('.cont')
@@ -37,22 +38,45 @@ async def screenshit(id):
     y = box['y'] - 20;                                
     w = box['width'] + 40;                            
     h = box['height'] + 40; 
+    name = random.randint(1000000, 9999999)
     
-    await page.screenshot({'path': '/tmp/{}.png'.format(str(id)), 'clip': {'x': x, 'y': y, 'width': w, 'height': h}})
+    await page.screenshot({'path': '/tmp/{}.png'.format(str(name)), 'clip': {'x': x, 'y': y, 'width': w, 'height': h}})
 
     await browser.close()
 
-    return await photo_uploader.upload('/tmp/{}.png'.format(str(id)))
+    return await photo_uploader.upload('/tmp/{}.png'.format(str(name)))
 
 @bp.on.message(text=SL.hdl())
 async def index(m: Message, item: Optional[int] = None):
-    cursor = collection.find({})
-    quotes = []
-    for i in cursor:
-        quotes.append(i)
-    if (m.text[:10].lower() == '/спокойной'):
-        await SL.ans_up(quotes[17]["qu"], m)
-    else:
+    chat = config_load(chats)
+    chat = chat["chats"]
+
+    temp = item.split(' ')
+    if len(temp) == 1 and m.peer_id > 2000000000:
+        item = temp[0]
+        _id = m.peer_id - 2000000000
+        ids = []
+        for i in range(len(chat)):
+            ids.append(str(*chat[i]))
+        if str(_id) in ids:
+            index = ids.index(str(_id))
+            collection = db[chat[index][str(*chat[index])]]
+            cchat = chat[index][str(*chat[index])]
+    elif len(temp) == 2:
+        _id, item = temp
+        ids = []
+        for i in range(len(chat)):
+            ids.append( chat[i][ str(*chat[i]) ] )
+        if str(_id) in ids:
+            index = ids.index(str(_id))
+            collection = db[chat[index][str(*chat[index])]]
+            cchat = chat[index][str(*chat[index])]
+
+    if collection != None:
+        cursor = collection.find({})
+        quotes = []
+        for i in cursor:
+            quotes.append(i)
         data = config_load(config)
         default = data["default"]
         try:
@@ -61,12 +85,7 @@ async def index(m: Message, item: Optional[int] = None):
                 if (item != abs(item)):
                     item = len(quotes) - abs(item)
 
-                if os.path.isfile('/tmp/{}.png'.format(str(item))):
-                    photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
-                    att = await photo_uploader.upload('/tmp/{}.png'.format(str(item)))
-                    await SL.ans_up('', m, att)
-                else:
-                    await SL.ans_up('', m, await screenshit(item))
+                await SL.ans_up('', m, await screenshit(cchat, item))
 
             else:
                 await SL.ans_up(default["error"], m)
@@ -77,27 +96,52 @@ async def index(m: Message, item: Optional[int] = None):
 
 class Command2(AbstractCommand):
     def __init__(self):
-        super().__init__(handler = ['/ведать', '/ВЕДАТЬ', '/random', '/RANDOM'], description = 'display random quote')
+        super().__init__(handler = ['/ведать', '/ВЕДАТЬ', '/ведать <item>', '/ВЕДАТЬ <item>'], description = 'display random quote')
 
 Random = Command2()
 
 @bp.on.message(text=Random.hdl())
-async def rrandom(m: Message):
+async def rrandom(m: Message, item: Optional[str] = None):
     try:
-        cursor = collection.find({})
-        quotes = []
-        for i in cursor:
-            quotes.append(i)
-        ind = random.randint(0, len(quotes)-1)
-        photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
-        
-        if os.path.isfile('/tmp/{}.png'.format(str(ind))):
-            photo_uploader = PhotoMessageUploader(bp.api, generate_attachment_strings=True)
-            att = await photo_uploader.upload('/tmp/{}.png'.format(str(ind)))
-            await SL.ans_up('', m, att)
+        chat = config_load(chats)
+        chat = chat["chats"]
+
+        if item == None:
+            if m.peer_id > 2000000000:
+                _id = m.peer_id - 2000000000
+                ids = []
+                for i in range(len(chat)):
+                    ids.append(str(*chat[i]))
+                if str(_id) in ids:
+                    index = ids.index(str(_id))
+                    collection = db[chat[index][str(*chat[index])]]
+                    cchat = chat[index][str(*chat[index])]
+                else:
+                    cchat = chat[0]["0"]
+                    collection = db[cchat]
+            else:
+                cchat = chat[0]["0"]
+                collection = db[cchat]
         else:
-            await SL.ans_up('', m, await screenshit(ind))
+            ids = []
+            for i in range(len(chat)):
+                ids.append( chat[i][ str(*chat[i]) ] )
+            item = str(item)
+            if item in ids:
+                index = ids.index(item)
+                cchat = chat[index][str(*chat[index])]
+                collection = db[cchat]
+
+        if collection:
+            cursor = collection.find({})
+            quotes = []
+            for i in cursor:
+                quotes.append(i)
+            item = random.randint(0, len(quotes) - 1)
+            data = config_load(config)
+            default = data["default"]
+            await SL.ans_up('', m, await screenshit(cchat, item))
 
     except Exception as err:
-        await Random.ans_up(err, m)
+        await SL.ans_up(err, m)
 

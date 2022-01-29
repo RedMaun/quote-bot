@@ -1,6 +1,6 @@
 from vkbottle.bot import Blueprint, Message
 from classes.abstract_command import AbstractCommand
-from db.connect import collection
+from db.connect import db
 from typing import Optional
 from datetime import date, datetime
 from iteration_utilities import deepflatten
@@ -14,16 +14,14 @@ from hashlib import blake2s
 
 bp = Blueprint()
 
+chats = 'chats.json'
 config = 'config.json'
-
 
 def config_load(config):
     with open(config, 'r') as f:
         return json.load(f)
 
-
 config_content = config_load(config)
-
 
 class Command(AbstractCommand):
     def __init__(self):
@@ -31,9 +29,7 @@ class Command(AbstractCommand):
                                   '/СЬЛРЖАЛСЧ —глубинность <deep>', '/СЬЛРЖАЛСЧ —d <deep>'],
                          description='make quote from message; /сьлржалсч —d 0 to cut all reply and forward messages, 1 to cut all messages farther than 1 reply message')
 
-
 Quote = Command()
-
 
 async def get_pic_by_url(url):
     async with aiohttp.ClientSession() as session:
@@ -157,6 +153,9 @@ async def unpack(message, peer=None):
 
 @bp.on.message(text=Quote.hdl())
 async def quote(m: Message, deep: Optional[str] = None):
+    id_chat = m.peer_id
+    chat = config_load(chats)
+    chat = chat["chats"]
     try:
         if m.reply_message:
             try:
@@ -220,14 +219,30 @@ async def quote(m: Message, deep: Optional[str] = None):
                     quote_data = {"qu": qu, "au": au, "audio": audio, "images": images, "link": link, "da": time}
                 else:
                     quote_data = {"qu": qu, "au": au, "images": images, "link": link, "da": time}
-                collection.insert_one(quote_data)
+                if id_chat > 2000000000:
+                    id_chat = id_chat - 2000000000
+                    idss = []
+                    for i in range(len(chat)):
+                        idss.append(str(*chat[i]))
+                    if str(id_chat) in idss:
+                        cchat = chat[idss.index(str(id_chat))][str(id_chat)]
+                        collection = db[cchat]
+                        collection.insert_one(quote_data)
+                    else:
+                        cchat = chat[0]["0"]
+                        collection = db[cchat]
+                        collection.insert_one(quote_data)
+                else:
+                    cchat = chat[0]["0"]
+                    collection = db[cchat]
+                    collection.insert_one(quote_data)
 
                 s = -1
                 cursor = collection.find()
                 for line in cursor:
                     s += 1
 
-                await Quote.ans_up('https://quote.redmaun.site/index/' + str(s), m)
+                await Quote.ans_up('https://quote.redmaun.site/' + cchat + '/' + str(s), m)
         else:
             qu = []
             if b.count(b[0]) == len(b):
@@ -260,14 +275,30 @@ async def quote(m: Message, deep: Optional[str] = None):
                 quote_data = {"qu": qu, "au": au, "da": time, "link": link}
             else:
                 quote_data = {"qu": qu, "au": au, "da": time}
-            collection.insert_one(quote_data)
+            if id_chat > 2000000000:
+                id_chat = id_chat - 2000000000
+                idss = []
+                for i in range(len(chat)):
+                    idss.append(str(*chat[i]))
+                if str(id_chat) in idss:
+                    cchat = chat[idss.index(str(id_chat))][str(id_chat)]
+                    collection = db[cchat]
+                    collection.insert_one(quote_data)
+                else:
+                    cchat = chat[0]["0"]
+                    collection = db[cchat]
+                    collection.insert_one(quote_data)
+            else:
+                cchat = chat[0]["0"]
+                collection = db[cchat]
+                collection.insert_one(quote_data)
 
             s = -1
             cursor = collection.find()
             for line in cursor:
                 s += 1
 
-            await Quote.ans_up('https://quote.redmaun.site/index/' + str(s), m)
+            await Quote.ans_up('https://quote.redmaun.site/' + cchat + '/' + str(s), m)
 
     except Exception as e:
         await Quote.ans_up(e, m)

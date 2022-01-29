@@ -6,13 +6,14 @@ from typing import Optional
 from commands.quote import unpack, config_content
 import os
 import stat
+import glob
 
 bp = Blueprint()
 
 
 class Command(AbstractCommand):
     def __init__(self):
-        super().__init__(handler=['/баннер <item>', '/БАННЕР <item>', '/реклама <item>', '/РЕКЛАМА <item>'],
+        super().__init__(handler=['/баннер <item>', '/БАННЕР <item>', '/реклама <item>', '/РЕКЛАМА <item>', '/баннер', '/БАННЕР', '/реклама', '/РЕКЛАМА'],
                          description='will add a banner to quote site')
 
 
@@ -24,7 +25,7 @@ async def list(m: Message, item: Optional[int] = None):
     if item == None:
         for banner in itertools.chain.from_iterable([x['images'] for x in await unpack(m)]):
             files_list = os.listdir(config_content['banners_dir'])
-            if len(files_list) < 4:
+            if len(files_list) < 5:
                 file = os.path.join(config_content['banners_dir'], f'{len(files_list) + 1}.webp')
             else:
                 file = os.path.join(
@@ -34,6 +35,10 @@ async def list(m: Message, item: Optional[int] = None):
                 os.remove(file)
             os.replace(os.path.join(config_content['pics_dir'], banner.split('/')[-1]), file)
         await Banner.ans_up(config_content['default']['ok'], m)
+    elif item == "reset":
+        files = glob.glob(config_content['banners_dir']+'*')
+        for f in files:
+            os.remove(f)
     else:
         try:
             item = int(item)
