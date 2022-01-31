@@ -45,6 +45,9 @@ async def list(m: Message, item: Optional[int] = None, chat: Optional[str] = Non
                     item = int(item)
                     if (item != None and isinstance(item, int)):
                         myquery = { "_id": quotes[item]['_id'] }
+                        quote = collection.find_one(myquery)
+                        collection_delete = db["delete"]
+                        collection_delete.insert_one(quote)
                         collection.delete_one(myquery)
                         await Delete.ans_up(default['ok'], m)
                     else:
@@ -71,6 +74,9 @@ async def list(m: Message, item: Optional[int] = None, chat: Optional[str] = Non
                     item = int(item)
                     if (item != None and isinstance(item, int)):
                         myquery = { "_id": quotes[item]['_id'] }
+                        quote = collection.find_one(myquery)
+                        collection_delete = db["delete"]
+                        collection_delete.insert_one(quote)
                         collection.delete_one(myquery)
                         await Delete.ans_up(default['ok'], m)
                     else:

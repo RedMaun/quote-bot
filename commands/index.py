@@ -8,7 +8,7 @@ from db.connect import db
 import random
 import asyncio
 from pyppeteer import launch
-
+from time import sleep
 bp = Blueprint()
 
 chats = 'chats.json'
@@ -29,9 +29,9 @@ async def screenshit(chat, id):
     browser = await launch({'headless': True, 'defaultViewport': None})
     page = await browser.newPage()
     await page.setViewport({'width': 1920, 'height': 1080, 'deviceScaleFactor':1})
-    await page.goto('https://quote.redmaun.site/' + str(chat) + '/' + str(id))
-    await page.waitForSelector('.cont'); 
-    
+    await page.goto(str('https://quote.redmaun.site/' + str(chat) + '/' + str(id)))
+    await page.waitForSelector('.cont', {'visible': True})
+    sleep(2)    
     element = await page.querySelector('.cont')
     box = await element.boundingBox();
     x = box['x'] - 20;                                
@@ -72,7 +72,7 @@ async def index(m: Message, item: Optional[int] = None):
             collection = db[chat[index][str(*chat[index])]]
             cchat = chat[index][str(*chat[index])]
 
-    if collection != None:
+    if 'collection' in locals() and collection != None:
         cursor = collection.find({})
         quotes = []
         for i in cursor:
@@ -91,7 +91,7 @@ async def index(m: Message, item: Optional[int] = None):
                 await SL.ans_up(default["error"], m)
 
         except Exception as err:
-            await SL.ans_up(err, m)
+            await SL.ans_up(str(err), m)
 
 
 class Command2(AbstractCommand):
@@ -132,7 +132,7 @@ async def rrandom(m: Message, item: Optional[str] = None):
                 cchat = chat[index][str(*chat[index])]
                 collection = db[cchat]
 
-        if collection:
+        if 'collection' in locals() and collection != None:
             cursor = collection.find({})
             quotes = []
             for i in cursor:
@@ -140,8 +140,8 @@ async def rrandom(m: Message, item: Optional[str] = None):
             item = random.randint(0, len(quotes) - 1)
             data = config_load(config)
             default = data["default"]
-            await SL.ans_up('', m, await screenshit(cchat, item))
+            await Random.ans_up('', m, await screenshit(cchat, item))
 
     except Exception as err:
-        await SL.ans_up(err, m)
+        await Random.ans_up(str(err), m)
 

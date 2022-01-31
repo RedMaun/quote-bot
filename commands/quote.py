@@ -265,6 +265,7 @@ async def quote(m: Message, deep: Optional[str] = None):
                 for i in range(len(unpacked_message)):
                     qu.append(unpacked_message[i])
                 au = (await bp.api.messages.get_conversations_by_id(peer_ids=m.peer_id)).items[0].chat_settings.title
+                # au = ''
                 link = ''
 
             today = date.today()
@@ -301,4 +302,4 @@ async def quote(m: Message, deep: Optional[str] = None):
             await Quote.ans_up('https://quote.redmaun.site/' + cchat + '/' + str(s), m)
 
     except Exception as e:
-        await Quote.ans_up(e, m)
+        await Quote.ans_up(str(e), m)
