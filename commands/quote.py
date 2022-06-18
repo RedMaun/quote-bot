@@ -11,6 +11,7 @@ from PIL import GifImagePlugin
 import io
 import os
 from hashlib import blake2s
+import logging
 
 bp = Blueprint()
 
@@ -75,16 +76,16 @@ async def unpack(message, peer=None):
                 conversation_message_ids=message.conversation_message_id, peer_id=peer)
             if str(mess) != 'count=0 items=[]':
                 message = mess.items[0]
-        except:
-            pass
+        except Exception as e:
+            logging.critical(e, exc_info=True)
     else:
         try:
             mess = await bp.api.messages.get_by_conversation_message_id(
                 conversation_message_ids=message.conversation_message_id, peer_id=message.peer_id)
             if str(mess) != 'count=0 items=[]':
                 message = mess.items[0]
-        except:
-            pass
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
     async def unpack_one(msg):
         images = []
@@ -123,8 +124,8 @@ async def unpack(message, peer=None):
                     conversation_message_ids=message.reply_message.conversation_message_id, peer_id=peer)
                 if str(mess_reply) != 'count=0 items=[]':
                     abc = mess_reply.items[0]
-            except:
-                pass
+            except Exception as e:
+                logging.critical(e, exc_info=True)
         else:
             try:
                 mess_reply = await bp.api.messages.get_by_conversation_message_id(
@@ -132,8 +133,9 @@ async def unpack(message, peer=None):
                 if str(mess_reply) != 'count=0 items=[]':
                     abc = mess_reply.items[0]
 
-            except:
-                pass
+            except Exception as e:
+                logging.critical(e, exc_info=True)
+
         mes.append(await unpack(abc, peer))
 
     elif message.fwd_messages:
@@ -144,8 +146,9 @@ async def unpack(message, peer=None):
                     conversation_message_ids=message.fwd_messages[i].conversation_message_id, peer_id=message.peer_id)
                 if str(mess.items[0]) != 'count=0 items=[]':
                     abc = mess.items[0]
-            except:
-                pass
+            except Exception as e:
+                logging.critical(e, exc_info=True)
+
             mes.append(await unpack(abc))
 
     return mes
@@ -165,8 +168,9 @@ async def quote(m: Message, deep: Optional[str] = None):
                     mes = mes.items[0]
                 else:
                     mes = m.reply_message
-            except:
-                pass
+            except Exception as e:
+                logging.critical(e, exc_info=True)
+                
             unpacked_message = await unpack(mes, m.peer_id)
         elif m.fwd_messages:
             mes = await bp.api.messages.get_by_conversation_message_id(
@@ -245,6 +249,25 @@ async def quote(m: Message, deep: Optional[str] = None):
                 await Quote.ans_up('https://quote.redmaun.site/' + cchat + '/' + str(s), m)
         else:
             qu = []
+
+            if id_chat > 2000000000:
+                id_chat = id_chat - 2000000000
+                idss = []
+                for i in range(len(chat)):
+                    idss.append(str(*chat[i]))
+                if str(id_chat) in idss:
+                    cchat = chat[idss.index(str(id_chat))][str(id_chat)]
+                    collection = db[cchat]
+                
+                else:
+                    cchat = chat[0]["0"]
+                    collection = db[cchat]
+                    
+            else:
+                cchat = chat[0]["0"]
+                collection = db[cchat]
+                
+            
             if b.count(b[0]) == len(b):
                 for i in flat_unpack:
                     if "audio" in i:
@@ -264,8 +287,11 @@ async def quote(m: Message, deep: Optional[str] = None):
             else:
                 for i in range(len(unpacked_message)):
                     qu.append(unpacked_message[i])
-                au = (await bp.api.messages.get_conversations_by_id(peer_ids=m.peer_id)).items[0].chat_settings.title
-                # au = ''
+                try:
+                    au = (await bp.api.messages.get_conversations_by_id(peer_ids=m.peer_id)).items[0].chat_settings.title
+                except:
+                    au = cchat
+
                 link = ''
 
             today = date.today()
@@ -276,23 +302,8 @@ async def quote(m: Message, deep: Optional[str] = None):
                 quote_data = {"qu": qu, "au": au, "da": time, "link": link}
             else:
                 quote_data = {"qu": qu, "au": au, "da": time}
-            if id_chat > 2000000000:
-                id_chat = id_chat - 2000000000
-                idss = []
-                for i in range(len(chat)):
-                    idss.append(str(*chat[i]))
-                if str(id_chat) in idss:
-                    cchat = chat[idss.index(str(id_chat))][str(id_chat)]
-                    collection = db[cchat]
-                    collection.insert_one(quote_data)
-                else:
-                    cchat = chat[0]["0"]
-                    collection = db[cchat]
-                    collection.insert_one(quote_data)
-            else:
-                cchat = chat[0]["0"]
-                collection = db[cchat]
-                collection.insert_one(quote_data)
+            
+            collection.insert_one(quote_data)
 
             s = -1
             cursor = collection.find()
