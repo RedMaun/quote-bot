@@ -43,6 +43,7 @@ async def get_photo(b):
 async def react(message: Message):
     neofetch_trigger = 'debian uptime gtk3 icons neofetch terminal packages intel amd kernel shell alpine linux apk pkgs'.split()
     core_trigger = 'div else include void main int float printf def return append while'.split()
+    terminal_trigger = 'ls cat touch master rwx systemd systemctl wlan eth'.split()
     
     img = await get_photo(message.attachments[0].photo.sizes)
     img = cv2.resize(img, None, fx=1.2, fy=1.2, interpolation=cv2.INTER_CUBIC)
@@ -80,5 +81,8 @@ async def react(message: Message):
 
     elif (any(x in string for x in code_trigger)):
         await message.reply(choice(('хуйня, переделывай', 'говнокод', 'ну ты и долбаеб', 'что за сьлржалсч', 'насрал в компилятор')))
+    
+    elif (any(x in string for x in terminal_trigger)):
+        await message.reply(choice(('sudo rm -rf попробуй долбаёб', 'тебе не надоело?', 'надо было скачивать убунту')))
 
     
