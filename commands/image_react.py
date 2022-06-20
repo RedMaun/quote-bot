@@ -9,6 +9,8 @@ import pytesseract
 import cv2
 import matplotlib.pyplot as plt
 from random import choice
+import numpy as np
+import base64
 
 bp = Blueprint()
 
@@ -23,13 +25,11 @@ config_content = config_load(config)
 async def get_pic_by_url(url):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
-            img_bytes = await resp.read()
-    filename = f'{blake2s(img_bytes).hexdigest()}.png'
-    filepath = os.path.join(config_content['pics_dir'], filename)
-    if not os.path.exists(filepath):
-        with Image.open(io.BytesIO(img_bytes)) as img:
-            img.save(filepath, 'PNG', save_all=True)
-    return config_content['pics_dir'] + filename
+            img_str = await resp.read()
+
+    nparr = np.fromstring(img_str, np.uint8)
+    img_np = cv2.imdecode(nparr, flags=1)
+    return img_np
 
 
 async def get_photo(b):
@@ -41,13 +41,43 @@ async def get_photo(b):
 
 @bp.on.message(func=lambda message: (message.attachments != []))
 async def react(message: Message):
-    neofetch_trigger = ['debian', 'uptime', 'gtk3', 'icons', 'neofetch', 'gnu/linux', 'x86_64', 'terminal', 'packages', 'intel', 'amd', 'kernel', 'shell', 'alpine', 'linux', 'apk', 'pkgs']
+    neofetch_trigger = ['debian', 'uptime', 'gtk3', 'icons', 'neofetch', 'terminal', 'packages', 'intel', 'amd', 'kernel', 'shell', 'alpine', 'linux', 'apk', 'pkgs']
+    code_trigger = ['div', 'else', 'include', 'void', 'main', 'int', 'float', 'printf', 'def', 'return', 'append', 'while']
     img = await get_photo(message.attachments[0].photo.sizes)
-    image = cv2.imread(img)
-    string = pytesseract.image_to_string(image)
-    string = string.lower()
+    img = cv2.resize(img, None, fx=1.2, fy=1.2, interpolation=cv2.INTER_CUBIC)
+
+    kernel = np.ones((1, 1), np.uint8)
+    img = cv2.dilate(img, kernel, iterations=1)
+    img = cv2.erode(img, kernel, iterations=1)
+    
+    string_colorful = pytesseract.image_to_string(img)
+
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    cv2.threshold(cv2.GaussianBlur(img, (5, 5), 0), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+
+    cv2.threshold(cv2.bilateralFilter(img, 5, 75, 75), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+
+    cv2.threshold(cv2.medianBlur(img, 3), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+
+    cv2.adaptiveThreshold(cv2.GaussianBlur(img, (5, 5), 0), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
+
+    cv2.adaptiveThreshold(cv2.bilateralFilter(img, 9, 75, 75), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
+
+    cv2.adaptiveThreshold(cv2.medianBlur(img, 3), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
+
+    string_grey = pytesseract.image_to_string(img)
+
+    string_colorful = string_colorful.lower()
+    string_grey = string_grey.lower()
+
+    string = string_colorful + string_grey
     print(string)
+
     if (any(x in string for x in neofetch_trigger)):
-        await message.reply(choice(('ХУЙНЯ', 'ХУЙНЯ!!!', 'Хуйня, переделывай.', 'вот кому-то делать нехуй')))
+        await message.reply(choice(('ХУЙНЯ', 'ХУЙНЯ!!!', 'вот кому-то делать нехуй', 'найди работу, еблан', 'выйди на улицу', 'по тебе и видно + вот поэтому у тебя и нет девушки', 'да по тебе и видно', 'ну ты и долбаеб')))
+
+    elif (any(x in string for x in code_trigger)):
+        await message.reply(choice(('хуйня, переделывай', 'говнокод', 'ну ты и долбаеб', 'что за сьлржалсч', 'насрал в компилятор')))
 
     
