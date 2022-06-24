@@ -41,9 +41,9 @@ async def get_photo(b):
 
 @bp.on.message(func=lambda message: (message.attachments != []))
 async def react(message: Message):
-    neofetch_trigger = 'debian uptime gtk3 icons neofetch terminal packages intel amd kernel shell alpine linux apk pkgs'.split()
-    core_trigger = 'div else include void main int float printf def return append while'.split()
-    terminal_trigger = 'ls cat touch master rwx systemd systemctl wlan eth'.split()
+    neofetch_trigger = 'debian uptime gtk3 icons neofetch terminal packages kernel alpine linux apk pkgs'.split()
+    code_trigger = 'div else include void main float printf def return append'.split()
+    terminal_trigger = 'cat touch master rwx systemd systemctl wlan eth'.split()
     
     img = await get_photo(message.attachments[0].photo.sizes)
     img = cv2.resize(img, None, fx=1.2, fy=1.2, interpolation=cv2.INTER_CUBIC)
@@ -74,6 +74,7 @@ async def react(message: Message):
     string_grey = string_grey.lower()
 
     string = string_colorful + string_grey
+    string = string.split()
     print(string)
 
     if (any(x in string for x in neofetch_trigger)):

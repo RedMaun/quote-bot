@@ -277,8 +277,9 @@ async def quote(m: Message, deep: Optional[str] = None):
                     a = str(i)
                     lcls = locals()
                     res = str(unpacked_message).replace(a, y)
-                    exec('a = ' + res, globals(), lcls)
-                    unpacked_message = lcls["a"]
+                    a = ''
+                    a += res
+                    unpacked_message = a
                 for i in range(len(unpacked_message)):
                     qu.append(unpacked_message[i])
 
