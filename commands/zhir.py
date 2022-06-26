@@ -1,39 +1,25 @@
-import re
 from wand.image import Image
-from wand.font import Font
 from wand.drawing import Drawing 
-
 from vkbottle.bot import Blueprint, Message
 from vkbottle import PhotoMessageUploader
-from hashlib import blake2s
-import os, json
 from typing import Optional
 
 bp = Blueprint()
 
-config = 'config.json'
-
-def config_load(config):
-    with open(config, 'r') as f:
-        return json.load(f)
-
-config_content = config_load(config)
-
 handler = ['/жириновский <item>', '/жирик <item>']
-
-
 
 async def suggested(txt):
     with open('pics/zhir.jpeg', 'rb') as f:
         pattern = f.read()
-    txt = re.sub('^(ЕСТЬ ИДЕЯ|МБ|МОЖЕТ БЫТЬ|ПРЕДЛАГАЮ|А МОЖЕТ|МОЖЕТ|ДАВАЙТЕ|ДАВАЙ) ', '', txt, flags=re.IGNORECASE)
+    b = ['есть идея', 'мб', 'может быть', 'предложил', 'предлагаю', 'а может', 'может', 'давайте', 'давай', '?']
+    txt = txt.lower()
+    for x in b: txt = txt.replace(x, '')
     with Image(blob=pattern) as img:
         with Image(width=560, height=360) as img2:
             with Drawing() as draw: 
                 draw.font = 'NotoSans-Regular'
                 draw.font_size = 44
                 n = 22
-                #txt = [txt[i:i+n] for i in range(0, len(txt), n)]
                 txt = txt.split()
                 text = ['']
                 g = 0
@@ -44,7 +30,6 @@ async def suggested(txt):
                     
                     text[g] += txt[i] + ' '
                     
-
                 for i in range(0, len(text)):
                     draw.text(0, 45*(i+1), text[i]) 
 
