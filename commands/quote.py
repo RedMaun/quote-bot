@@ -275,7 +275,11 @@ async def quote(m: Message, deep: Optional[str] = None):
                     else:
                         y = str({'id': i["id"], 'text': i["text"], 'images': i["images"]})
                     a = str(i)
-                    unpacked_message = str(unpacked_message).replace(a, y)
+                    lcls = locals()
+                    res = str(unpacked_message).replace(a, y)
+                    exec('a = ' + res, globals(), lcls)
+                    unpacked_message = lcls["a"]
+                    
                 for i in range(len(unpacked_message)):
                     qu.append(unpacked_message[i])
 
